@@ -1,0 +1,16 @@
+{
+  "name": "Stash",
+  "short_name": "Stash",
+  "description": "A clean, local-only bookmark manager, read-later & RSS reader",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAFAFA",
+  "theme_color": "#18181B",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
