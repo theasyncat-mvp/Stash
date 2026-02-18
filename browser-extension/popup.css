@@ -1,0 +1,293 @@
+/* ── Reset & Base ── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 340px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+  font-size: 13px;
+  color: #27272a;
+  background: #ffffff;
+  line-height: 1.5;
+}
+
+/* ── Offline banner ── */
+.offline-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 500;
+  border-bottom: 1px solid #fecaca;
+}
+
+/* ── Header ── */
+.header {
+  padding: 14px 16px 0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #18181b;
+}
+
+.logo svg {
+  color: #3b82f6;
+}
+
+/* ── Form body ── */
+.form-body {
+  padding: 14px 16px 16px;
+}
+
+/* ── Page preview ── */
+.page-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+
+.page-favicon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  margin-top: 1px;
+  flex-shrink: 0;
+  background: #e4e4e7;
+}
+
+.page-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.page-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #18181b;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.page-url {
+  font-size: 11px;
+  color: #a1a1aa;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Fields ── */
+.field {
+  margin-bottom: 14px;
+}
+
+.field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #a1a1aa;
+  margin-bottom: 6px;
+}
+
+.field-hint {
+  font-size: 10px;
+  color: #d4d4d8;
+  margin-top: 4px;
+}
+
+/* ── Tags ── */
+.tags-container {
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  padding: 6px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 36px;
+  align-items: center;
+  transition: border-color 0.15s;
+  cursor: text;
+}
+
+.tags-container:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.tags-list {
+  display: contents;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 6px 2px 8px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+.tag-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 99px;
+  border: none;
+  background: transparent;
+  color: #93c5fd;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.1s;
+}
+
+.tag-chip-remove:hover {
+  background: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.tag-input {
+  flex: 1;
+  min-width: 80px;
+  border: none;
+  outline: none;
+  font-size: 12px;
+  color: #27272a;
+  background: transparent;
+  padding: 2px 0;
+}
+
+.tag-input::placeholder {
+  color: #d4d4d8;
+}
+
+/* ── Buttons ── */
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 8px 16px;
+  line-height: 1;
+}
+
+.btn-primary {
+  flex: 1;
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #2563eb;
+}
+
+.btn-primary:active {
+  background: #1d4ed8;
+  transform: scale(0.98);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background: #f4f4f5;
+  color: #52525b;
+}
+
+.btn-secondary:hover {
+  background: #e4e4e7;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* ── Success view ── */
+.success-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px 24px;
+  gap: 8px;
+}
+
+.success-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #ecfdf5;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.success-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: #18181b;
+}
+
+/* ── Loading spinner on button ── */
+.btn-primary.loading {
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.btn-primary.loading svg {
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Utility ── */
+.hidden {
+  display: none !important;
+}

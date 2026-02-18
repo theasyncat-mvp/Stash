@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Save to Stash</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <!-- Connection status -->
+  <div id="offline-banner" class="offline-banner hidden">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span>Stash is not running</span>
+  </div>
+
+  <!-- Success state -->
+  <div id="success-view" class="success-view hidden">
+    <div class="success-icon">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    </div>
+    <p class="success-text">Saved to Stash!</p>
+    <button id="open-stash-btn" class="btn btn-secondary btn-sm">Open Stash</button>
+  </div>
+
+  <!-- Main form -->
+  <div id="main-view">
+    <div class="header">
+      <div class="logo">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+        <span>Save to Stash</span>
+      </div>
+    </div>
+
+    <div class="form-body">
+      <!-- Page info preview -->
+      <div class="page-preview">
+        <img id="page-favicon" class="page-favicon" src="" alt="" />
+        <div class="page-info">
+          <p id="page-title" class="page-title"></p>
+          <p id="page-url" class="page-url"></p>
+        </div>
+      </div>
+
+      <!-- Tags input -->
+      <div class="field">
+        <label class="field-label">Tags</label>
+        <div class="tags-container">
+          <div id="tags-list" class="tags-list"></div>
+          <input
+            id="tag-input"
+            type="text"
+            placeholder="Add tags (comma or Enter)..."
+            class="tag-input"
+            autocomplete="off"
+          />
+        </div>
+        <p class="field-hint">Separate tags with comma or Enter</p>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions">
+        <button id="save-btn" class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+          Save Bookmark
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
