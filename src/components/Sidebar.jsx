@@ -86,7 +86,6 @@ export default function Sidebar({ collapsed, onToggle, onAddFeed, onAddCollectio
         <div className="space-y-0.5">
           {navItems.map((item) => (
             <DroppableNavItem
-              key={item.id}
               item={item}
               isActive={activeView === item.id}
               inboxCount={item.id === 'inbox' ? inboxCount : 0}
@@ -178,7 +177,6 @@ function DroppableNavItem({ item, isActive, inboxCount, onNav }) {
           {inboxCount}
         </span>
       )}
-      <kbd className="text-[10px] text-zinc-300 dark:text-zinc-600">{item.key}</kbd>
     </button>
   );
 }
