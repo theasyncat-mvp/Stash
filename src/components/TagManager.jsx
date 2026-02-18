@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useBookmarkStore, useAllTags } from '../store/useBookmarkStore.js';
 
@@ -6,6 +7,7 @@ export default function TagManager({ bookmarkId, tags }) {
   const [input, setInput] = useState('');
   const [highlightIdx, setHighlightIdx] = useState(0);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState(null);
   const { addTag, removeTag } = useBookmarkStore();
   const allTags = useAllTags();
   const inputRef = useRef(null);
@@ -22,9 +24,26 @@ export default function TagManager({ bookmarkId, tags }) {
         .slice(0, 8)
     : [];
 
+  // Recalculate portal position whenever suggestions show
+  const updatePosition = useCallback(() => {
+    if (!inputRef.current) return;
+    const rect = inputRef.current.getBoundingClientRect();
+    setDropdownPos({
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: rect.width,
+    });
+  }, []);
+
   useEffect(() => {
     setHighlightIdx(0);
   }, [input]);
+
+  useEffect(() => {
+    if (showSuggestions && suggestions.length > 0) {
+      updatePosition();
+    }
+  }, [showSuggestions, suggestions.length, updatePosition]);
 
   // Scroll highlighted item into view
   useEffect(() => {
@@ -74,6 +93,49 @@ export default function TagManager({ bookmarkId, tags }) {
     }
   };
 
+  const suggestionsDropdown =
+    showSuggestions && suggestions.length > 0 && dropdownPos
+      ? createPortal(
+          <ul
+            ref={listRef}
+            id="tag-suggestions"
+            role="listbox"
+            style={{
+              position: 'fixed',
+              top: dropdownPos.top,
+              left: dropdownPos.left,
+              width: dropdownPos.width,
+            }}
+            className="z-100 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg py-1 max-h-40 overflow-y-auto"
+          >
+            {suggestions.map((s, i) => (
+              <li
+                key={s.name}
+                id={`tag-sug-${i}`}
+                role="option"
+                aria-selected={i === highlightIdx}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  commitTag(s.name);
+                }}
+                onMouseEnter={() => setHighlightIdx(i)}
+                className={`flex items-center justify-between px-2.5 py-1.5 text-xs cursor-pointer transition-colors duration-100 ${
+                  i === highlightIdx
+                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                    : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                }`}
+              >
+                <span className="truncate">{s.name}</span>
+                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 shrink-0 ml-2">
+                  {s.count}
+                </span>
+              </li>
+            ))}
+          </ul>,
+          document.body,
+        )
+      : null;
+
   return (
     <div>
       <div className="flex flex-wrap gap-1.5 mb-2">
@@ -105,7 +167,7 @@ export default function TagManager({ bookmarkId, tags }) {
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => {
             // Delay so click on suggestion registers before closing
-            setTimeout(() => setShowSuggestions(false), 150);
+            setTimeout(() => setShowSuggestions(false), 200);
           }}
           onKeyDown={handleKeyDown}
           placeholder="Add tag..."
@@ -121,38 +183,7 @@ export default function TagManager({ bookmarkId, tags }) {
           }
           className="w-full px-2 py-1 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md outline-none text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:border-blue-500 dark:focus:border-blue-400 transition-colors duration-150"
         />
-        {showSuggestions && suggestions.length > 0 && (
-          <ul
-            ref={listRef}
-            id="tag-suggestions"
-            role="listbox"
-            className="absolute left-0 right-0 top-full mt-1 z-20 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg py-1 max-h-40 overflow-y-auto"
-          >
-            {suggestions.map((s, i) => (
-              <li
-                key={s.name}
-                id={`tag-sug-${i}`}
-                role="option"
-                aria-selected={i === highlightIdx}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  commitTag(s.name);
-                }}
-                onMouseEnter={() => setHighlightIdx(i)}
-                className={`flex items-center justify-between px-2.5 py-1.5 text-xs cursor-pointer transition-colors duration-100 ${
-                  i === highlightIdx
-                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                    : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
-                }`}
-              >
-                <span className="truncate">{s.name}</span>
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-500 shrink-0 ml-2">
-                  {s.count}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        {suggestionsDropdown}
       </div>
     </div>
   );

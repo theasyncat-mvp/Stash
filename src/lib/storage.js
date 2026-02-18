@@ -6,6 +6,7 @@ const KEYS = {
   bookmarks: 'stash-bookmarks',
   collections: 'stash-collections',
   feeds: 'stash-feeds',
+  feedCategories: 'stash-feed-categories',
   theme: 'stash-theme',
   feedRefresh: 'stash-feed-refresh',
   readerPrefs: 'stash-reader-prefs',
@@ -33,6 +34,14 @@ export async function loadFeeds() {
 
 export async function saveFeeds(feeds) {
   await store.set(KEYS.feeds, feeds);
+}
+
+export async function loadFeedCategories() {
+  return (await store.get(KEYS.feedCategories)) ?? [];
+}
+
+export async function saveFeedCategories(categories) {
+  await store.set(KEYS.feedCategories, categories);
 }
 
 export async function loadTheme() {
@@ -64,6 +73,7 @@ export async function exportAllData() {
     bookmarks: await store.get(KEYS.bookmarks),
     collections: await store.get(KEYS.collections),
     feeds: await store.get(KEYS.feeds),
+    feedCategories: await store.get(KEYS.feedCategories),
   };
 }
 
@@ -71,4 +81,5 @@ export async function importAllData(data) {
   if (data.bookmarks !== undefined) await store.set(KEYS.bookmarks, data.bookmarks);
   if (data.collections !== undefined) await store.set(KEYS.collections, data.collections);
   if (data.feeds !== undefined) await store.set(KEYS.feeds, data.feeds);
+  if (data.feedCategories !== undefined) await store.set(KEYS.feedCategories, data.feedCategories);
 }

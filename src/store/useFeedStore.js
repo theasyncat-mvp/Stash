@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeTextFile } from '@tauri-apps/plugin-fs';
-import { loadFeeds, saveFeeds, saveBookmarks, loadFeedRefresh, saveFeedRefresh } from '../lib/storage.js';
+import { loadFeeds, saveFeeds, saveBookmarks, loadFeedRefresh, saveFeedRefresh, loadFeedCategories, saveFeedCategories } from '../lib/storage.js';
 import { fetchAndParseRSS } from '../lib/rss.js';
 import { useToastStore } from './useToastStore.js';
 import { useBookmarkStore } from './useBookmarkStore.js';
@@ -11,13 +11,14 @@ let refreshInterval = null;
 
 export const useFeedStore = create((set, get) => ({
   feeds: [],
+  feedCategories: [],   // [{ id, name }]
   loaded: false,
   refreshing: false,
   autoRefreshMinutes: 0,
 
   loadFeeds: async () => {
-    const [feeds, mins] = await Promise.all([loadFeeds(), loadFeedRefresh()]);
-    set({ feeds, loaded: true, autoRefreshMinutes: mins });
+    const [feeds, mins, categories] = await Promise.all([loadFeeds(), loadFeedRefresh(), loadFeedCategories()]);
+    set({ feeds, loaded: true, autoRefreshMinutes: mins, feedCategories: categories });
     if (mins > 0) {
       get().startAutoRefresh(mins);
     }
@@ -45,6 +46,48 @@ export const useFeedStore = create((set, get) => ({
       clearInterval(refreshInterval);
       refreshInterval = null;
     }
+  },
+
+  // ── Feed category management ───────────────────────────────────────────────
+  addFeedCategory: async (name) => {
+    const trimmed = name.trim();
+    if (!trimmed) return null;
+    const existing = get().feedCategories.find((c) => c.name.toLowerCase() === trimmed.toLowerCase());
+    if (existing) return existing;
+    const cat = { id: uuidv4(), name: trimmed };
+    const categories = [...get().feedCategories, cat];
+    set({ feedCategories: categories });
+    await saveFeedCategories(categories);
+    return cat;
+  },
+
+  renameFeedCategory: async (categoryId, newName) => {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    const categories = get().feedCategories.map((c) =>
+      c.id === categoryId ? { ...c, name: trimmed } : c,
+    );
+    set({ feedCategories: categories });
+    await saveFeedCategories(categories);
+  },
+
+  removeFeedCategory: async (categoryId) => {
+    const categories = get().feedCategories.filter((c) => c.id !== categoryId);
+    // Unset category from feeds that had it
+    const feeds = get().feeds.map((f) =>
+      f.categoryId === categoryId ? { ...f, categoryId: null } : f,
+    );
+    set({ feedCategories: categories, feeds });
+    await saveFeedCategories(categories);
+    await saveFeeds(feeds);
+  },
+
+  setFeedCategory: async (feedId, categoryId) => {
+    const feeds = get().feeds.map((f) =>
+      f.id === feedId ? { ...f, categoryId: categoryId || null } : f,
+    );
+    set({ feeds });
+    await saveFeeds(feeds);
   },
 
   addFeed: async (rssUrl) => {
@@ -199,10 +242,23 @@ export const useFeedStore = create((set, get) => ({
   },
 
   exportOPML: async () => {
-    const { feeds } = get();
-    const outlines = feeds.map((f) =>
-      `      <outline text="${escapeXml(f.title)}" title="${escapeXml(f.title)}" type="rss" xmlUrl="${escapeXml(f.url)}" htmlUrl="${escapeXml(f.siteUrl || '')}" />`
-    ).join('\n');
+    const { feeds, feedCategories } = get();
+    const catMap = Object.fromEntries(feedCategories.map((c) => [c.id, c.name]));
+
+    // Group feeds by category for OPML structure
+    const groups = {};
+    for (const f of feeds) {
+      const catName = f.categoryId && catMap[f.categoryId] ? catMap[f.categoryId] : 'Stash Feeds';
+      (groups[catName] ||= []).push(f);
+    }
+
+    const outlineGroups = Object.entries(groups).map(([name, groupFeeds]) => {
+      const children = groupFeeds.map((f) =>
+        `        <outline text="${escapeXml(f.title)}" title="${escapeXml(f.title)}" type="rss" xmlUrl="${escapeXml(f.url)}" htmlUrl="${escapeXml(f.siteUrl || '')}" />`
+      ).join('\n');
+      return `    <outline text="${escapeXml(name)}" title="${escapeXml(name)}">\n${children}\n    </outline>`;
+    }).join('\n');
+
     const opml = `<?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
   <head>
@@ -210,9 +266,7 @@ export const useFeedStore = create((set, get) => ({
     <dateCreated>${new Date().toISOString()}</dateCreated>
   </head>
   <body>
-    <outline text="Stash Feeds" title="Stash Feeds">
-${outlines}
-    </outline>
+${outlineGroups}
   </body>
 </opml>`;
     try {
@@ -230,6 +284,25 @@ ${outlines}
 
   importOPML: async (xmlString) => {
     const doc = new DOMParser().parseFromString(xmlString, 'text/xml');
+    // Import categories from folder outlines
+    const folderOutlines = doc.querySelectorAll('body > outline');
+    const categoryMap = {};  // category name -> category id
+
+    for (const folder of folderOutlines) {
+      const catName = (folder.getAttribute('text') || folder.getAttribute('title') || '').trim();
+      // Skip if this is a direct feed outline (has xmlUrl)
+      if (folder.getAttribute('xmlUrl')) continue;
+      if (catName && catName !== 'Stash Feeds') {
+        const existing = get().feedCategories.find((c) => c.name.toLowerCase() === catName.toLowerCase());
+        if (existing) {
+          categoryMap[catName] = existing.id;
+        } else {
+          const cat = await get().addFeedCategory(catName);
+          if (cat) categoryMap[catName] = cat.id;
+        }
+      }
+    }
+
     const outlines = doc.querySelectorAll('outline[xmlUrl]');
     let imported = 0;
     let skipped = 0;
@@ -240,8 +313,16 @@ ${outlines}
       const existing = get().feeds.find((f) => f.url === xmlUrl);
       if (existing) { skipped++; continue; }
 
+      // Determine parent category
+      const parent = outline.parentElement;
+      const parentName = parent ? (parent.getAttribute('text') || parent.getAttribute('title') || '').trim() : '';
+      const catId = categoryMap[parentName] || null;
+
       try {
-        await get().addFeed(xmlUrl);
+        const feed = await get().addFeed(xmlUrl);
+        if (feed && catId) {
+          await get().setFeedCategory(feed.id, catId);
+        }
         imported++;
       } catch {
         skipped++;
