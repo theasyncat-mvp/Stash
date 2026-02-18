@@ -27,11 +27,13 @@ function parseRSS(doc) {
     const description = stripHtml(rawDesc).slice(0, 300);
     const pubDate = item.querySelector('pubDate')?.textContent?.trim() || '';
     const guid = item.querySelector('guid')?.textContent?.trim() || link;
+    const image = extractRSSImage(item, rawDesc);
 
     return {
       title,
       url: link,
       description,
+      image,
       pubDate: pubDate ? new Date(pubDate).getTime() : Date.now(),
       guid,
     };
@@ -66,11 +68,16 @@ function parseAtom(doc) {
       entry.querySelector('updated')?.textContent?.trim() ||
       '';
     const guid = entry.querySelector('id')?.textContent?.trim() || link;
+    const rawContent =
+      entry.querySelector('content')?.textContent?.trim() ||
+      entry.querySelector('summary')?.textContent?.trim() || '';
+    const image = extractRSSImage(entry, rawContent);
 
     return {
       title,
       url: link,
       description,
+      image,
       pubDate: pubDate ? new Date(pubDate).getTime() : Date.now(),
       guid,
     };
@@ -80,6 +87,48 @@ function parseAtom(doc) {
     feed: { title: feedTitle, siteUrl: feedLink },
     items,
   };
+}
+
+/**
+ * Try to extract an image URL from a feed item using common conventions:
+ * media:content, media:thumbnail, enclosure, or first <img> in the HTML body.
+ */
+function extractRSSImage(el, rawHtml) {
+  // media:content with image type
+  const mediaContent = el.querySelector('content');
+  if (mediaContent) {
+    const medium = mediaContent.getAttribute('medium');
+    const type = mediaContent.getAttribute('type') || '';
+    const url = mediaContent.getAttribute('url');
+    if (url && (medium === 'image' || type.startsWith('image/'))) return url;
+  }
+
+  // media:thumbnail
+  const mediaThumbnail = el.querySelector('thumbnail');
+  if (mediaThumbnail) {
+    const url = mediaThumbnail.getAttribute('url');
+    if (url) return url;
+  }
+
+  // enclosure (podcasts / media feeds)
+  const enclosure = el.querySelector('enclosure');
+  if (enclosure) {
+    const type = enclosure.getAttribute('type') || '';
+    const url = enclosure.getAttribute('url');
+    if (url && type.startsWith('image/')) return url;
+  }
+
+  // First <img> inside the raw HTML description/content
+  if (rawHtml) {
+    const htmlDoc = new DOMParser().parseFromString(rawHtml, 'text/html');
+    const img = htmlDoc.querySelector('img[src]');
+    if (img) {
+      const src = img.getAttribute('src');
+      if (src && src.startsWith('http')) return src;
+    }
+  }
+
+  return null;
 }
 
 function stripHtml(html) {
