@@ -1,11 +1,11 @@
-import { useBookmarkStore } from '../store/useBookmarkStore.js';
+import { useBookmarkStore, useFilteredBookmarks } from '../store/useBookmarkStore.js';
 import BookmarkCard from './BookmarkCard.jsx';
 import BookmarkRow from './BookmarkRow.jsx';
 import EmptyState from './EmptyState.jsx';
 
 export default function BookmarkList() {
-  const { viewMode, activeView, getFilteredBookmarks } = useBookmarkStore();
-  const bookmarks = getFilteredBookmarks();
+  const { viewMode, activeView } = useBookmarkStore();
+  const bookmarks = useFilteredBookmarks();
 
   if (bookmarks.length === 0) {
     return <EmptyState view={activeView} />;

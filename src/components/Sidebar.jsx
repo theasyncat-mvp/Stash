@@ -3,7 +3,7 @@ import {
   Inbox, Bookmark, Star, Archive, Tag,
   ChevronRight, ChevronDown, PanelLeftClose, PanelLeft, Command,
 } from 'lucide-react';
-import { useBookmarkStore } from '../store/useBookmarkStore.js';
+import { useBookmarkStore, useAllTags, useInboxCount } from '../store/useBookmarkStore.js';
 import SearchBar from './SearchBar.jsx';
 import FeedList from './FeedList.jsx';
 import CollectionList from './CollectionList.jsx';
@@ -18,11 +18,11 @@ const navItems = [
 ];
 
 export default function Sidebar({ collapsed, onToggle, onAddFeed, onAddCollection, onMobileClose }) {
-  const { activeView, setActiveView, bookmarks, getAllTags } = useBookmarkStore();
+  const { activeView, setActiveView } = useBookmarkStore();
   const [tagsOpen, setTagsOpen] = useState(true);
 
-  const inboxCount = bookmarks.filter((b) => !b.isArchived && !b.isRead && b.source === 'manual').length;
-  const tags = getAllTags();
+  const inboxCount = useInboxCount();
+  const tags = useAllTags();
 
   const handleNav = (view) => {
     setActiveView(view);

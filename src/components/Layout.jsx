@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, CheckSquare, Bookmark } from 'lucide-react';
-import { useBookmarkStore } from '../store/useBookmarkStore.js';
+import { useBookmarkStore, useFilteredBookmarks } from '../store/useBookmarkStore.js';
 import { useFeedStore } from '../store/useFeedStore.js';
 import Sidebar from './Sidebar.jsx';
 import BookmarkList from './BookmarkList.jsx';
@@ -16,8 +16,9 @@ import KeyboardShortcuts from './KeyboardShortcuts.jsx';
 import ToastContainer from './Toast.jsx';
 
 export default function Layout() {
-  const { activeView, selectedBookmarkId, collections, setActiveView, setSelectedBookmark, toggleBulkMode, bulkMode, setViewMode, getFilteredBookmarks } = useBookmarkStore();
+  const { activeView, selectedBookmarkId, collections, setActiveView, setSelectedBookmark, toggleBulkMode, bulkMode, setViewMode } = useBookmarkStore();
   const { feeds } = useFeedStore();
+  const filteredBookmarks = useFilteredBookmarks();
 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -27,7 +28,7 @@ export default function Layout() {
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
 
-  const bookmarkCount = getFilteredBookmarks().length;
+  const bookmarkCount = filteredBookmarks.length;
 
   const handleKeyDown = useCallback((e) => {
     const target = e.target;

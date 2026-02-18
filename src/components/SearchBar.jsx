@@ -1,18 +1,44 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, X } from 'lucide-react';
 import { useBookmarkStore } from '../store/useBookmarkStore.js';
 
+const DEBOUNCE_MS = 250;
+
 export default function SearchBar() {
   const { searchQuery, setSearchQuery, setActiveView, activeView } = useBookmarkStore();
+  const [localQuery, setLocalQuery] = useState(searchQuery);
+  const timerRef = useRef(null);
+
+  // Sync local state when store resets the query externally (e.g. view change)
+  useEffect(() => {
+    setLocalQuery(searchQuery);
+  }, [searchQuery]);
+
+  const debouncedSet = useCallback(
+    (val) => {
+      clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        setSearchQuery(val);
+      }, DEBOUNCE_MS);
+    },
+    [setSearchQuery]
+  );
+
+  // Cleanup on unmount
+  useEffect(() => () => clearTimeout(timerRef.current), []);
 
   const handleChange = (e) => {
     const val = e.target.value;
-    setSearchQuery(val);
+    setLocalQuery(val);
     if (val && activeView !== 'search') {
       setActiveView('search');
     }
+    debouncedSet(val);
   };
 
   const clear = () => {
+    clearTimeout(timerRef.current);
+    setLocalQuery('');
     setSearchQuery('');
     if (activeView === 'search') {
       setActiveView('inbox');
@@ -24,12 +50,14 @@ export default function SearchBar() {
       <Search size={14} className="absolute left-5.5 top-1/2 -translate-y-1/2 text-zinc-400" />
       <input
         type="text"
-        value={searchQuery}
+        value={localQuery}
         onChange={handleChange}
         placeholder="Search..."
+        aria-label="Search bookmarks"
+        role="searchbox"
         className="w-full pl-8 pr-8 py-1.5 text-sm bg-zinc-200/60 dark:bg-zinc-800 rounded-lg border-none outline-none text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 transition-colors duration-150"
       />
-      {searchQuery && (
+      {localQuery && (
         <button
           onClick={clear}
           className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-pointer"

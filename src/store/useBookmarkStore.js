@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { loadBookmarks, saveBookmarks, loadCollections, saveCollections } from '../lib/storage.js';
 import { fetchMetadata } from '../lib/metadata.js';
@@ -398,4 +399,52 @@ function sortBookmarks(bookmarks, sortBy) {
     default:
       return sorted.sort((a, b) => b.createdAt - a.createdAt);
   }
+}
+
+// ── Memoized selector hooks ──────────────────────────────────────────────────
+// These use React.useMemo tied to the specific store slices so that
+// consumers only recompute when the underlying data actually changes.
+
+/**
+ * Returns the filtered + sorted bookmark list, memoised on the values
+ * that feed into getFilteredBookmarks().
+ */
+export function useFilteredBookmarks() {
+  const bookmarks = useBookmarkStore((s) => s.bookmarks);
+  const activeView = useBookmarkStore((s) => s.activeView);
+  const searchQuery = useBookmarkStore((s) => s.searchQuery);
+  const sortBy = useBookmarkStore((s) => s.sortBy);
+  const getFilteredBookmarks = useBookmarkStore((s) => s.getFilteredBookmarks);
+
+  return useMemo(
+    () => getFilteredBookmarks(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [bookmarks, activeView, searchQuery, sortBy]
+  );
+}
+
+/**
+ * Returns the aggregated tag list, memoised on the bookmarks array ref.
+ */
+export function useAllTags() {
+  const bookmarks = useBookmarkStore((s) => s.bookmarks);
+  const getAllTags = useBookmarkStore((s) => s.getAllTags);
+
+  return useMemo(
+    () => getAllTags(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [bookmarks]
+  );
+}
+
+/**
+ * Returns the inbox count, memoised on the bookmarks array ref.
+ */
+export function useInboxCount() {
+  const bookmarks = useBookmarkStore((s) => s.bookmarks);
+
+  return useMemo(
+    () => bookmarks.filter((b) => !b.isArchived && !b.isRead && b.source === 'manual').length,
+    [bookmarks]
+  );
 }

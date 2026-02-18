@@ -3,7 +3,7 @@ import {
   Search, Inbox, Bookmark, Star, Archive, Tag, Rss, FolderOpen,
   Plus, Sun, Moon, Grid3X3, List, Download, Upload,
 } from 'lucide-react';
-import { useBookmarkStore } from '../store/useBookmarkStore.js';
+import { useBookmarkStore, useAllTags } from '../store/useBookmarkStore.js';
 import { useFeedStore } from '../store/useFeedStore.js';
 
 export default function CommandPalette({ onClose, onAddBookmark, onAddFeed, onAddCollection }) {
@@ -12,8 +12,9 @@ export default function CommandPalette({ onClose, onAddBookmark, onAddFeed, onAd
   const inputRef = useRef(null);
   const listRef = useRef(null);
 
-  const { bookmarks, collections, setActiveView, setViewMode, getAllTags } = useBookmarkStore();
+  const { bookmarks, collections, setActiveView, setViewMode } = useBookmarkStore();
   const { feeds } = useFeedStore();
+  const allTags = useAllTags();
 
   const commands = useMemo(() => {
     const cmds = [
@@ -28,7 +29,7 @@ export default function CommandPalette({ onClose, onAddBookmark, onAddFeed, onAd
       { id: 'view-list', label: 'Switch to List View', icon: List, section: 'View', action: () => { setViewMode('list'); onClose(); } },
     ];
 
-    getAllTags().forEach((tag) => {
+    allTags.forEach((tag) => {
       cmds.push({
         id: `tag-${tag.name}`,
         label: `Tag: ${tag.name}`,
@@ -84,7 +85,7 @@ export default function CommandPalette({ onClose, onAddBookmark, onAddFeed, onAd
     }
 
     return cmds;
-  }, [query, bookmarks, collections, feeds, getAllTags, setActiveView, setViewMode, onClose, onAddBookmark, onAddFeed, onAddCollection]);
+  }, [query, bookmarks, collections, feeds, allTags, setActiveView, setViewMode, onClose, onAddBookmark, onAddFeed, onAddCollection]);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return commands;
