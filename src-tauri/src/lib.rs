@@ -1,9 +1,12 @@
 use reqwest;
+use serde::{Deserialize, Serialize};
 use tauri::{
-    Manager,
+    Emitter, Manager,
     menu::{MenuBuilder, MenuItemBuilder},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
 };
+use axum::{Json, Router, routing::{get, post}, http::StatusCode};
+use tower_http::cors::CorsLayer;
 
 /// Fetch a URL directly from the Rust backend — bypasses CORS entirely.
 /// Returns the response body as a UTF-8 string.
@@ -32,6 +35,81 @@ async fn fetch_url(url: String) -> Result<String, String> {
         .text()
         .await
         .map_err(|e| format!("Failed to read response body: {e}"))
+}
+
+// ── Extension HTTP server ────────────────────────────────────────────────────
+
+const EXTENSION_PORT: u16 = 21890;
+
+#[derive(Deserialize)]
+struct ExtensionBookmark {
+    url: String,
+    title: Option<String>,
+    description: Option<String>,
+    tags: Option<Vec<String>>,
+}
+
+#[derive(Serialize, Clone)]
+struct ExtensionBookmarkEvent {
+    url: String,
+    title: Option<String>,
+    description: Option<String>,
+    tags: Vec<String>,
+}
+
+/// Start a tiny HTTP server on 127.0.0.1:21890 that the browser extension
+/// can POST bookmarks to. The server emits a Tauri event so the frontend
+/// can pick it up and call addBookmark().
+async fn start_extension_server(app: tauri::AppHandle) {
+    let app_save = app.clone();
+    let app_show = app.clone();
+
+    let router = Router::new()
+        .route("/api/ping", get(|| async {
+            Json(serde_json::json!({ "status": "ok", "app": "Stash" }))
+        }))
+        .route("/api/bookmark", post(move |Json(payload): Json<ExtensionBookmark>| {
+            let handle = app_save.clone();
+            async move {
+                let event = ExtensionBookmarkEvent {
+                    url: payload.url,
+                    title: payload.title,
+                    description: payload.description,
+                    tags: payload.tags.unwrap_or_default(),
+                };
+                match handle.emit("extension-save-bookmark", &event) {
+                    Ok(_) => (StatusCode::OK, Json(serde_json::json!({ "status": "saved" }))),
+                    Err(e) => (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        Json(serde_json::json!({ "status": "error", "message": format!("{e}") })),
+                    ),
+                }
+            }
+        }))
+        .route("/api/show", post(move || {
+            let handle = app_show.clone();
+            async move {
+                if let Some(window) = handle.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.unminimize();
+                    let _ = window.set_focus();
+                }
+                Json(serde_json::json!({ "status": "ok" }))
+            }
+        }))
+        .layer(CorsLayer::permissive());
+
+    match tokio::net::TcpListener::bind(format!("127.0.0.1:{EXTENSION_PORT}")).await {
+        Ok(listener) => {
+            log::info!("Extension server listening on 127.0.0.1:{EXTENSION_PORT}");
+            if let Err(e) = axum::serve(listener, router).await {
+                log::error!("Extension server error: {e}");
+            }
+        }
+        Err(e) => {
+            log::warn!("Could not start extension server on port {EXTENSION_PORT}: {e}");
+        }
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -93,6 +171,10 @@ pub fn run() {
               }
           })
           .build(app)?;
+
+      // --- Extension HTTP server (background task) ---
+      let handle = app.handle().clone();
+      tauri::async_runtime::spawn(start_extension_server(handle));
 
       Ok(())
     })

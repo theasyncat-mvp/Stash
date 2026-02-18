@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
+import { listen } from '@tauri-apps/api/event';
 import { useBookmarkStore } from './store/useBookmarkStore.js';
 import { useFeedStore } from './store/useFeedStore.js';
 import { useThemeStore } from './store/useThemeStore.js';
+import { useToastStore } from './store/useToastStore.js';
 import Layout from './components/Layout.jsx';
 import ConfirmDialog from './components/ConfirmDialog.jsx';
 
@@ -16,6 +18,17 @@ export default function App() {
     loadFeeds();
     initTheme();
   }, [loadAll, loadFeeds, initTheme]);
+
+  // Listen for bookmarks saved from the browser extension
+  useEffect(() => {
+    const unlisten = listen('extension-save-bookmark', (event) => {
+      const { url, tags } = event.payload;
+      if (url) {
+        useBookmarkStore.getState().addBookmark(url, tags || []);
+      }
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, []);
 
   if (!loaded) {
     return (
