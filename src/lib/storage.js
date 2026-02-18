@@ -8,6 +8,7 @@ const KEYS = {
   feeds: 'stash-feeds',
   theme: 'stash-theme',
   feedRefresh: 'stash-feed-refresh',
+  readerPrefs: 'stash-reader-prefs',
 };
 
 export async function loadBookmarks() {
@@ -48,6 +49,14 @@ export async function loadFeedRefresh() {
 
 export async function saveFeedRefresh(minutes) {
   await store.set(KEYS.feedRefresh, minutes);
+}
+
+export async function loadReaderPrefs() {
+  return (await store.get(KEYS.readerPrefs)) ?? null;
+}
+
+export async function saveReaderPrefs(prefs) {
+  await store.set(KEYS.readerPrefs, prefs);
 }
 
 export async function exportAllData() {

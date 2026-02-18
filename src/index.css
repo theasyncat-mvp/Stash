@@ -38,10 +38,8 @@
 
 /* Reader mode article typography */
 .reader-content {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.125rem;
-  line-height: 1.8;
   color: #27272a;
+  transition: font-size 0.15s ease, line-height 0.15s ease;
 }
 .dark .reader-content {
   color: #d4d4d8;
