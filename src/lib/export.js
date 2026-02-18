@@ -1,18 +1,17 @@
 import { v4 as uuidv4 } from 'uuid';
+import { save, open } from '@tauri-apps/plugin-dialog';
+import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
 
-export function exportBookmarks(bookmarks) {
+export async function exportBookmarks(bookmarks) {
   const clean = bookmarks.map(({ _loading, ...b }) => b);
   const data = JSON.stringify(clean, null, 2);
-  const blob = new Blob([data], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
   const date = new Date().toISOString().slice(0, 10);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `stash-export-${date}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const filePath = await save({
+    defaultPath: `stash-export-${date}.json`,
+    filters: [{ name: 'JSON', extensions: ['json'] }],
+  });
+  if (!filePath) return;
+  await writeTextFile(filePath, data);
 }
 
 export function importBookmarks(jsonString, existingBookmarks) {
@@ -40,7 +39,7 @@ export function importBookmarks(jsonString, existingBookmarks) {
   return { imported, skipped, bookmarks: newBookmarks };
 }
 
-export function exportBookmarksAsHTML(bookmarks) {
+export async function exportBookmarksAsHTML(bookmarks) {
   const lines = ['<!DOCTYPE NETSCAPE-Bookmark-file-1>', '<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">', '<TITLE>Stash Bookmarks</TITLE>', '<H1>Stash Bookmarks</H1>', '<DL><p>'];
 
   const tagGroups = {};
@@ -77,15 +76,12 @@ export function exportBookmarksAsHTML(bookmarks) {
   lines.push('</DL><p>');
 
   const html = lines.join('\n');
-  const blob = new Blob([html], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `stash-bookmarks-${new Date().toISOString().slice(0, 10)}.html`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const filePath = await save({
+    defaultPath: `stash-bookmarks-${new Date().toISOString().slice(0, 10)}.html`,
+    filters: [{ name: 'HTML', extensions: ['html'] }],
+  });
+  if (!filePath) return;
+  await writeTextFile(filePath, html);
 }
 
 export function importBookmarksFromHTML(htmlString, existingBookmarks) {

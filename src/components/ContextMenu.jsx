@@ -1,4 +1,5 @@
 import { ExternalLink, Eye, Star, Archive, Trash2, FolderOpen } from 'lucide-react';
+import { open as shellOpen } from '@tauri-apps/plugin-shell';
 import { useBookmarkStore } from '../store/useBookmarkStore.js';
 
 export default function ContextMenu({ bookmark, position, onClose }) {
@@ -17,7 +18,7 @@ export default function ContextMenu({ bookmark, position, onClose }) {
         style={{ top: position.y, left: position.x }}
       >
         <button
-          onClick={() => handleAction(() => window.open(bookmark.url, '_blank'))}
+          onClick={() => handleAction(() => shellOpen(bookmark.url))}
           className="w-full flex items-center gap-2.5 px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-150 cursor-pointer"
         >
           <ExternalLink size={14} />

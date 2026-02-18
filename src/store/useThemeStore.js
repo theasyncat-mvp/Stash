@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { loadTheme, saveTheme } from '../lib/storage.js';
 
 function applyTheme(theme) {
   const root = document.documentElement;
@@ -12,13 +13,18 @@ function applyTheme(theme) {
   }
 }
 
-const saved = typeof window !== 'undefined' ? localStorage.getItem('stash-theme') || 'system' : 'system';
-applyTheme(saved);
+// Apply system default immediately to avoid flash
+applyTheme('system');
 
 export const useThemeStore = create((set) => ({
-  theme: saved,
-  setTheme: (theme) => {
-    localStorage.setItem('stash-theme', theme);
+  theme: 'system',
+  initTheme: async () => {
+    const theme = await loadTheme();
+    applyTheme(theme);
+    set({ theme });
+  },
+  setTheme: async (theme) => {
+    await saveTheme(theme);
     applyTheme(theme);
     set({ theme });
   },

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Star, Archive, Trash2, ExternalLink, Eye, BookmarkCheck, Copy, Clock } from 'lucide-react';
+import { open as shellOpen } from '@tauri-apps/plugin-shell';
 import { useBookmarkStore } from '../store/useBookmarkStore.js';
 import { useToastStore } from '../store/useToastStore.js';
 import { timeAgo } from '../lib/timeAgo.js';
@@ -97,15 +98,13 @@ export default function BookmarkDetail() {
           )}
 
           <div className="flex items-center gap-2">
-            <a
-              href={bookmark.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
+            <button
+              onClick={() => shellOpen(bookmark.url)}
+              className="inline-flex items-center gap-1.5 text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 cursor-pointer"
             >
               <ExternalLink size={14} />
               Open original
-            </a>
+            </button>
             <button
               onClick={copyUrl}
               className="inline-flex items-center gap-1 text-sm text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-pointer transition-colors duration-150"

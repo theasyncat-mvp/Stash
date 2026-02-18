@@ -1,46 +1,48 @@
-import { useState, useRef } from 'react';
-import { Download, Upload, MoreHorizontal, X } from 'lucide-react';
+import { useState } from 'react';
+import { Download, Upload, MoreHorizontal } from 'lucide-react';
+import { open } from '@tauri-apps/plugin-dialog';
+import { readTextFile } from '@tauri-apps/plugin-fs';
 import { useBookmarkStore } from '../store/useBookmarkStore.js';
 import { useFeedStore } from '../store/useFeedStore.js';
 import { useToastStore } from '../store/useToastStore.js';
 import { exportBookmarks, importBookmarks, exportBookmarksAsHTML, importBookmarksFromHTML } from '../lib/export.js';
 
 export default function ImportExport() {
-  const fileRef = useRef(null);
-  const opmlRef = useRef(null);
   const [showMenu, setShowMenu] = useState(false);
   const { bookmarks, importBookmarksData } = useBookmarkStore();
   const { exportOPML, importOPML } = useFeedStore();
 
-  const handleExportJSON = () => {
-    exportBookmarks(bookmarks);
-    useToastStore.getState().success('Bookmarks exported as JSON');
-    setShowMenu(false);
-  };
-
-  const handleExportHTML = () => {
-    exportBookmarksAsHTML(bookmarks);
-    useToastStore.getState().success('Bookmarks exported as HTML');
-    setShowMenu(false);
-  };
-
-  const handleImport = () => {
-    fileRef.current?.click();
-    setShowMenu(false);
-  };
-
-  const handleImportOPML = () => {
-    opmlRef.current?.click();
-    setShowMenu(false);
-  };
-
-  const handleFile = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleExportJSON = async () => {
     try {
-      const text = await file.text();
+      await exportBookmarks(bookmarks);
+      useToastStore.getState().success('Bookmarks exported as JSON');
+    } catch {
+      useToastStore.getState().error('Export failed');
+    }
+    setShowMenu(false);
+  };
+
+  const handleExportHTML = async () => {
+    try {
+      await exportBookmarksAsHTML(bookmarks);
+      useToastStore.getState().success('Bookmarks exported as HTML');
+    } catch {
+      useToastStore.getState().error('Export failed');
+    }
+    setShowMenu(false);
+  };
+
+  const handleImport = async () => {
+    setShowMenu(false);
+    try {
+      const filePath = await open({
+        multiple: false,
+        filters: [{ name: 'Bookmarks', extensions: ['json', 'html', 'htm'] }],
+      });
+      if (!filePath) return;
+      const text = await readTextFile(filePath);
       let result;
-      if (file.name.endsWith('.html') || file.name.endsWith('.htm')) {
+      if (filePath.endsWith('.html') || filePath.endsWith('.htm')) {
         result = importBookmarksFromHTML(text, bookmarks);
       } else {
         result = importBookmarks(text, bookmarks);
@@ -52,19 +54,21 @@ export default function ImportExport() {
     } catch (err) {
       useToastStore.getState().error('Import failed: ' + err.message);
     }
-    e.target.value = '';
   };
 
-  const handleOPMLFile = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleImportOPML = async () => {
+    setShowMenu(false);
     try {
-      const text = await file.text();
+      const filePath = await open({
+        multiple: false,
+        filters: [{ name: 'OPML', extensions: ['opml', 'xml'] }],
+      });
+      if (!filePath) return;
+      const text = await readTextFile(filePath);
       await importOPML(text);
     } catch (err) {
       useToastStore.getState().error('OPML import failed: ' + err.message);
     }
-    e.target.value = '';
   };
 
   return (
@@ -102,9 +106,6 @@ export default function ImportExport() {
           </div>
         </>
       )}
-
-      <input ref={fileRef} type="file" accept=".json,.html,.htm" className="hidden" onChange={handleFile} />
-      <input ref={opmlRef} type="file" accept=".opml,.xml" className="hidden" onChange={handleOPMLFile} />
     </div>
   );
 }

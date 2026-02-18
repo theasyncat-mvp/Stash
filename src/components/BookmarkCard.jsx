@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Globe, Star, Archive, ExternalLink, Trash2, Clock } from 'lucide-react';
+import { open as shellOpen } from '@tauri-apps/plugin-shell';
 import { useBookmarkStore } from '../store/useBookmarkStore.js';
 import { timeAgo } from '../lib/timeAgo.js';
 import ContextMenu from './ContextMenu.jsx';
@@ -127,7 +128,7 @@ export default function BookmarkCard({ bookmark }) {
               <Archive size={13} />
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); window.open(bookmark.url, '_blank'); }}
+              onClick={(e) => { e.stopPropagation(); shellOpen(bookmark.url); }}
               className="p-1.5 rounded-md text-zinc-400 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm hover:bg-white dark:hover:bg-zinc-800 hover:text-zinc-600 transition-colors duration-150 cursor-pointer"
             >
               <ExternalLink size={13} />

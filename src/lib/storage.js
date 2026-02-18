@@ -1,34 +1,65 @@
-import { get, set } from 'idb-keyval';
+import { LazyStore } from '@tauri-apps/plugin-store';
+
+const store = new LazyStore('stash-data.json', { autoSave: true });
 
 const KEYS = {
   bookmarks: 'stash-bookmarks',
   collections: 'stash-collections',
   feeds: 'stash-feeds',
+  theme: 'stash-theme',
+  feedRefresh: 'stash-feed-refresh',
 };
 
 export async function loadBookmarks() {
-  const data = await get(KEYS.bookmarks);
-  return data || [];
+  return (await store.get(KEYS.bookmarks)) ?? [];
 }
 
 export async function saveBookmarks(bookmarks) {
-  await set(KEYS.bookmarks, bookmarks);
+  await store.set(KEYS.bookmarks, bookmarks);
 }
 
 export async function loadCollections() {
-  const data = await get(KEYS.collections);
-  return data || [];
+  return (await store.get(KEYS.collections)) ?? [];
 }
 
 export async function saveCollections(collections) {
-  await set(KEYS.collections, collections);
+  await store.set(KEYS.collections, collections);
 }
 
 export async function loadFeeds() {
-  const data = await get(KEYS.feeds);
-  return data || [];
+  return (await store.get(KEYS.feeds)) ?? [];
 }
 
 export async function saveFeeds(feeds) {
-  await set(KEYS.feeds, feeds);
+  await store.set(KEYS.feeds, feeds);
+}
+
+export async function loadTheme() {
+  return (await store.get(KEYS.theme)) ?? 'system';
+}
+
+export async function saveTheme(theme) {
+  await store.set(KEYS.theme, theme);
+}
+
+export async function loadFeedRefresh() {
+  return (await store.get(KEYS.feedRefresh)) ?? 0;
+}
+
+export async function saveFeedRefresh(minutes) {
+  await store.set(KEYS.feedRefresh, minutes);
+}
+
+export async function exportAllData() {
+  return {
+    bookmarks: await store.get(KEYS.bookmarks),
+    collections: await store.get(KEYS.collections),
+    feeds: await store.get(KEYS.feeds),
+  };
+}
+
+export async function importAllData(data) {
+  if (data.bookmarks !== undefined) await store.set(KEYS.bookmarks, data.bookmarks);
+  if (data.collections !== undefined) await store.set(KEYS.collections, data.collections);
+  if (data.feeds !== undefined) await store.set(KEYS.feeds, data.feeds);
 }

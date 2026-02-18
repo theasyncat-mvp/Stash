@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import { loadFeeds, saveFeeds, saveBookmarks } from '../lib/storage.js';
+import { save } from '@tauri-apps/plugin-dialog';
+import { writeTextFile } from '@tauri-apps/plugin-fs';
+import { loadFeeds, saveFeeds, saveBookmarks, loadFeedRefresh, saveFeedRefresh } from '../lib/storage.js';
 import { fetchAndParseRSS } from '../lib/rss.js';
 import { useToastStore } from './useToastStore.js';
 import { useBookmarkStore } from './useBookmarkStore.js';
@@ -11,19 +13,18 @@ export const useFeedStore = create((set, get) => ({
   feeds: [],
   loaded: false,
   refreshing: false,
-  autoRefreshMinutes: parseInt(localStorage.getItem('stash-feed-refresh') || '0', 10),
+  autoRefreshMinutes: 0,
 
   loadFeeds: async () => {
-    const feeds = await loadFeeds();
-    set({ feeds, loaded: true });
-    const mins = get().autoRefreshMinutes;
+    const [feeds, mins] = await Promise.all([loadFeeds(), loadFeedRefresh()]);
+    set({ feeds, loaded: true, autoRefreshMinutes: mins });
     if (mins > 0) {
       get().startAutoRefresh(mins);
     }
   },
 
-  setAutoRefresh: (minutes) => {
-    localStorage.setItem('stash-feed-refresh', String(minutes));
+  setAutoRefresh: async (minutes) => {
+    await saveFeedRefresh(minutes);
     set({ autoRefreshMinutes: minutes });
     if (minutes > 0) {
       get().startAutoRefresh(minutes);
@@ -197,7 +198,7 @@ export const useFeedStore = create((set, get) => ({
     }
   },
 
-  exportOPML: () => {
+  exportOPML: async () => {
     const { feeds } = get();
     const outlines = feeds.map((f) =>
       `      <outline text="${escapeXml(f.title)}" title="${escapeXml(f.title)}" type="rss" xmlUrl="${escapeXml(f.url)}" htmlUrl="${escapeXml(f.siteUrl || '')}" />`
@@ -214,16 +215,17 @@ ${outlines}
     </outline>
   </body>
 </opml>`;
-    const blob = new Blob([opml], { type: 'text/xml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `stash-feeds-${new Date().toISOString().slice(0, 10)}.opml`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    useToastStore.getState().success('Feeds exported as OPML');
+    try {
+      const filePath = await save({
+        defaultPath: `stash-feeds-${new Date().toISOString().slice(0, 10)}.opml`,
+        filters: [{ name: 'OPML', extensions: ['opml'] }],
+      });
+      if (!filePath) return;
+      await writeTextFile(filePath, opml);
+      useToastStore.getState().success('Feeds exported as OPML');
+    } catch {
+      useToastStore.getState().error('OPML export failed');
+    }
   },
 
   importOPML: async (xmlString) => {
