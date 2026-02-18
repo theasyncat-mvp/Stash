@@ -10,6 +10,10 @@ const shortcuts = [
   { keys: ['4'], description: 'Go to Archive' },
   { keys: ['G'], description: 'Toggle Grid view' },
   { keys: ['L'], description: 'Toggle List view' },
+  { keys: ['↓ / J'], description: 'Move to next bookmark' },
+  { keys: ['↑ / K'], description: 'Move to previous bookmark' },
+  { keys: ['Enter'], description: 'Open focused bookmark detail' },
+  { keys: ['O'], description: 'Open focused bookmark in browser' },
   { keys: ['Esc'], description: 'Close panel / modal' },
   { keys: ['?'], description: 'Show keyboard shortcuts' },
 ];

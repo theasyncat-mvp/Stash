@@ -1,6 +1,7 @@
-import { useRef } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { SortableContext, verticalListSortingStrategy, rectSortingStrategy } from '@dnd-kit/sortable';
+import { open as shellOpen } from '@tauri-apps/plugin-shell';
 import { useBookmarkStore, useFilteredBookmarks } from '../store/useBookmarkStore.js';
 import BookmarkCard from './BookmarkCard.jsx';
 import BookmarkRow from './BookmarkRow.jsx';
@@ -14,9 +15,14 @@ export default function BookmarkList() {
   const { viewMode, activeView } = useBookmarkStore();
   const bookmarks = useFilteredBookmarks();
   const parentRef = useRef(null);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+
+  // Reset focus when bookmarks change
+  useEffect(() => {
+    setFocusedIndex(-1);
+  }, [bookmarks.length, activeView]);
 
   // Determine columns for grid view based on container width
-  // We reuse the same Tailwind breakpoints: 1 col < 640, 2 cols < 1024, 3 cols
   const getColumns = () => {
     if (!parentRef.current) return 3;
     const w = parentRef.current.offsetWidth;
@@ -30,13 +36,29 @@ export default function BookmarkList() {
   }
 
   if (viewMode === 'list') {
-    return <VirtualList bookmarks={bookmarks} parentRef={parentRef} />;
+    return (
+      <VirtualList
+        bookmarks={bookmarks}
+        parentRef={parentRef}
+        focusedIndex={focusedIndex}
+        setFocusedIndex={setFocusedIndex}
+      />
+    );
   }
 
-  return <VirtualGrid bookmarks={bookmarks} parentRef={parentRef} getColumns={getColumns} />;
+  return (
+    <VirtualGrid
+      bookmarks={bookmarks}
+      parentRef={parentRef}
+      getColumns={getColumns}
+      focusedIndex={focusedIndex}
+      setFocusedIndex={setFocusedIndex}
+    />
+  );
 }
 
-function VirtualList({ bookmarks, parentRef }) {
+function VirtualList({ bookmarks, parentRef, focusedIndex, setFocusedIndex }) {
+  const { setSelectedBookmark } = useBookmarkStore();
   const ids = bookmarks.map((b) => b.id);
   const virtualizer = useVirtualizer({
     count: bookmarks.length,
@@ -45,8 +67,48 @@ function VirtualList({ bookmarks, parentRef }) {
     overscan: OVERSCAN,
   });
 
+  const handleKeyDown = useCallback(
+    (e) => {
+      // Skip if user is in an input / textarea
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      const len = bookmarks.length;
+      if (len === 0) return;
+
+      if (e.key === 'ArrowDown' || e.key === 'j') {
+        e.preventDefault();
+        setFocusedIndex((i) => {
+          const next = i < len - 1 ? i + 1 : i;
+          virtualizer.scrollToIndex(next, { align: 'auto' });
+          return next;
+        });
+      } else if (e.key === 'ArrowUp' || e.key === 'k') {
+        e.preventDefault();
+        setFocusedIndex((i) => {
+          const next = i > 0 ? i - 1 : 0;
+          virtualizer.scrollToIndex(next, { align: 'auto' });
+          return next;
+        });
+      } else if (e.key === 'Enter' && focusedIndex >= 0 && focusedIndex < len) {
+        e.preventDefault();
+        setSelectedBookmark(bookmarks[focusedIndex].id);
+      } else if (e.key === 'o' && focusedIndex >= 0 && focusedIndex < len) {
+        e.preventDefault();
+        shellOpen(bookmarks[focusedIndex].url);
+      }
+    },
+    [bookmarks, focusedIndex, setFocusedIndex, setSelectedBookmark, virtualizer],
+  );
+
   return (
-    <div ref={parentRef} className="h-full overflow-y-auto" role="list" aria-label="Bookmarks list">
+    <div
+      ref={parentRef}
+      className="h-full overflow-y-auto outline-none"
+      role="list"
+      aria-label="Bookmarks list"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+    >
       <SortableContext items={ids} strategy={verticalListSortingStrategy}>
         <div className="flex flex-col gap-1" style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
           {virtualizer.getVirtualItems().map((vItem) => (
@@ -61,7 +123,7 @@ function VirtualList({ bookmarks, parentRef }) {
                 transform: `translateY(${vItem.start}px)`,
               }}
             >
-              <BookmarkRow bookmark={bookmarks[vItem.index]} />
+              <BookmarkRow bookmark={bookmarks[vItem.index]} isFocused={vItem.index === focusedIndex} />
             </div>
           ))}
         </div>
@@ -70,7 +132,8 @@ function VirtualList({ bookmarks, parentRef }) {
   );
 }
 
-function VirtualGrid({ bookmarks, parentRef, getColumns }) {
+function VirtualGrid({ bookmarks, parentRef, getColumns, focusedIndex, setFocusedIndex }) {
+  const { setSelectedBookmark } = useBookmarkStore();
   const cols = typeof getColumns === 'function' ? getColumns() : 3;
   const rowCount = Math.ceil(bookmarks.length / cols);
   const ids = bookmarks.map((b) => b.id);
@@ -82,8 +145,61 @@ function VirtualGrid({ bookmarks, parentRef, getColumns }) {
     overscan: OVERSCAN,
   });
 
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      const len = bookmarks.length;
+      if (len === 0) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setFocusedIndex((i) => {
+          const next = Math.min(i + cols, len - 1);
+          virtualizer.scrollToIndex(Math.floor(next / cols), { align: 'auto' });
+          return next;
+        });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setFocusedIndex((i) => {
+          const next = Math.max(i - cols, 0);
+          virtualizer.scrollToIndex(Math.floor(next / cols), { align: 'auto' });
+          return next;
+        });
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setFocusedIndex((i) => {
+          const next = i < len - 1 ? i + 1 : i;
+          virtualizer.scrollToIndex(Math.floor(next / cols), { align: 'auto' });
+          return next;
+        });
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setFocusedIndex((i) => {
+          const next = i > 0 ? i - 1 : 0;
+          virtualizer.scrollToIndex(Math.floor(next / cols), { align: 'auto' });
+          return next;
+        });
+      } else if (e.key === 'Enter' && focusedIndex >= 0 && focusedIndex < len) {
+        e.preventDefault();
+        setSelectedBookmark(bookmarks[focusedIndex].id);
+      } else if (e.key === 'o' && focusedIndex >= 0 && focusedIndex < len) {
+        e.preventDefault();
+        shellOpen(bookmarks[focusedIndex].url);
+      }
+    },
+    [bookmarks, cols, focusedIndex, setFocusedIndex, setSelectedBookmark, virtualizer],
+  );
+
   return (
-    <div ref={parentRef} className="h-full overflow-y-auto" role="list" aria-label="Bookmarks grid">
+    <div
+      ref={parentRef}
+      className="h-full overflow-y-auto outline-none"
+      role="list"
+      aria-label="Bookmarks grid"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+    >
       <SortableContext items={ids} strategy={rectSortingStrategy}>
         <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
           {virtualizer.getVirtualItems().map((vRow) => {
@@ -102,8 +218,8 @@ function VirtualGrid({ bookmarks, parentRef, getColumns }) {
                   transform: `translateY(${vRow.start}px)`,
                 }}
               >
-                {rowBookmarks.map((bm) => (
-                  <BookmarkCard key={bm.id} bookmark={bm} />
+                {rowBookmarks.map((bm, i) => (
+                  <BookmarkCard key={bm.id} bookmark={bm} isFocused={startIdx + i === focusedIndex} />
                 ))}
               </div>
             );

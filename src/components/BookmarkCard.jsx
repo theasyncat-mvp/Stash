@@ -7,7 +7,7 @@ import { useBookmarkStore } from '../store/useBookmarkStore.js';
 import { timeAgo } from '../lib/timeAgo.js';
 import ContextMenu from './ContextMenu.jsx';
 
-export default function BookmarkCard({ bookmark }) {
+export default function BookmarkCard({ bookmark, isFocused }) {
   const { setSelectedBookmark, toggleFavorite, toggleArchive, deleteBookmark, bulkMode, selectedIds, toggleSelected } = useBookmarkStore();
   const [contextMenu, setContextMenu] = useState(null);
 
@@ -55,7 +55,9 @@ export default function BookmarkCard({ bookmark }) {
         className={`group relative bg-white dark:bg-zinc-900 border rounded-xl overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer ${
           isSelected
             ? 'border-blue-500 dark:border-blue-400 ring-2 ring-blue-500/20'
-            : 'border-zinc-200 dark:border-zinc-800'
+            : isFocused
+              ? 'border-blue-400 dark:border-blue-500 ring-1 ring-blue-400/50 dark:ring-blue-500/40'
+              : 'border-zinc-200 dark:border-zinc-800'
         }`}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
