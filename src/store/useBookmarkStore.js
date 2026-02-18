@@ -602,11 +602,11 @@ export const useBookmarkStore = create((set, get) => ({
     if (activeView === 'inbox') {
       filtered = bookmarks.filter((b) => !b.isArchived && !b.isRead && b.source === 'manual');
     } else if (activeView === 'all') {
-      filtered = bookmarks.filter((b) => !b.isArchived);
+      filtered = bookmarks.filter((b) => !b.isArchived && b.source !== 'feed');
     } else if (activeView === 'favorites') {
-      filtered = bookmarks.filter((b) => b.isFavorite);
+      filtered = bookmarks.filter((b) => b.isFavorite && b.source !== 'feed');
     } else if (activeView === 'archive') {
-      filtered = bookmarks.filter((b) => b.isArchived);
+      filtered = bookmarks.filter((b) => b.isArchived && b.source !== 'feed');
     } else if (activeView.startsWith('tag:')) {
       const tagName = activeView.slice(4);
       filtered = bookmarks.filter((b) => b.tags.includes(tagName));
