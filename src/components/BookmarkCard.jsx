@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Globe, Star, Archive, ExternalLink, Trash2, Clock } from 'lucide-react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Globe, Star, Archive, ExternalLink, Trash2, Clock, GripVertical } from 'lucide-react';
 import { open as shellOpen } from '@tauri-apps/plugin-shell';
 import { useBookmarkStore } from '../store/useBookmarkStore.js';
 import { timeAgo } from '../lib/timeAgo.js';
@@ -8,6 +10,18 @@ import ContextMenu from './ContextMenu.jsx';
 export default function BookmarkCard({ bookmark }) {
   const { setSelectedBookmark, toggleFavorite, toggleArchive, deleteBookmark, bulkMode, selectedIds, toggleSelected } = useBookmarkStore();
   const [contextMenu, setContextMenu] = useState(null);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: bookmark.id,
+    data: { type: 'bookmark', bookmark },
+  });
 
   const domain = (() => {
     try { return new URL(bookmark.url).hostname.replace('www.', ''); }
@@ -32,6 +46,12 @@ export default function BookmarkCard({ bookmark }) {
   return (
     <>
       <div
+        ref={setNodeRef}
+        style={{
+          transform: CSS.Transform.toString(transform),
+          transition,
+          opacity: isDragging ? 0.4 : 1,
+        }}
         className={`group relative bg-white dark:bg-zinc-900 border rounded-xl overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer ${
           isSelected
             ? 'border-blue-500 dark:border-blue-400 ring-2 ring-blue-500/20'
@@ -39,7 +59,19 @@ export default function BookmarkCard({ bookmark }) {
         }`}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
+        {...attributes}
       >
+        {/* Drag handle */}
+        {!bulkMode && (
+          <div
+            {...listeners}
+            className="absolute top-2 left-2 z-10 p-1 rounded bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm text-zinc-300 dark:text-zinc-600 opacity-0 group-hover:opacity-100 hover:text-zinc-500 dark:hover:text-zinc-400 transition-opacity duration-150 cursor-grab active:cursor-grabbing"
+            aria-label="Drag to reorder"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical size={12} aria-hidden="true" />
+          </div>
+        )}
         {bulkMode && (
           <div className="absolute top-2 left-2 z-10">
             <input

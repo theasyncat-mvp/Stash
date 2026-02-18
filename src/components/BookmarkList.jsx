@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { SortableContext, verticalListSortingStrategy, rectSortingStrategy } from '@dnd-kit/sortable';
 import { useBookmarkStore, useFilteredBookmarks } from '../store/useBookmarkStore.js';
 import BookmarkCard from './BookmarkCard.jsx';
 import BookmarkRow from './BookmarkRow.jsx';
@@ -36,6 +37,7 @@ export default function BookmarkList() {
 }
 
 function VirtualList({ bookmarks, parentRef }) {
+  const ids = bookmarks.map((b) => b.id);
   const virtualizer = useVirtualizer({
     count: bookmarks.length,
     getScrollElement: () => parentRef.current,
@@ -45,23 +47,25 @@ function VirtualList({ bookmarks, parentRef }) {
 
   return (
     <div ref={parentRef} className="h-full overflow-y-auto" role="list" aria-label="Bookmarks list">
-      <div className="flex flex-col gap-1" style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
-        {virtualizer.getVirtualItems().map((vItem) => (
-          <div
-            key={bookmarks[vItem.index].id}
-            role="listitem"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              transform: `translateY(${vItem.start}px)`,
-            }}
-          >
-            <BookmarkRow bookmark={bookmarks[vItem.index]} />
-          </div>
-        ))}
-      </div>
+      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+        <div className="flex flex-col gap-1" style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+          {virtualizer.getVirtualItems().map((vItem) => (
+            <div
+              key={bookmarks[vItem.index].id}
+              role="listitem"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${vItem.start}px)`,
+              }}
+            >
+              <BookmarkRow bookmark={bookmarks[vItem.index]} />
+            </div>
+          ))}
+        </div>
+      </SortableContext>
     </div>
   );
 }
@@ -69,6 +73,7 @@ function VirtualList({ bookmarks, parentRef }) {
 function VirtualGrid({ bookmarks, parentRef, getColumns }) {
   const cols = typeof getColumns === 'function' ? getColumns() : 3;
   const rowCount = Math.ceil(bookmarks.length / cols);
+  const ids = bookmarks.map((b) => b.id);
 
   const virtualizer = useVirtualizer({
     count: rowCount,
@@ -79,30 +84,32 @@ function VirtualGrid({ bookmarks, parentRef, getColumns }) {
 
   return (
     <div ref={parentRef} className="h-full overflow-y-auto" role="list" aria-label="Bookmarks grid">
-      <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
-        {virtualizer.getVirtualItems().map((vRow) => {
-          const startIdx = vRow.index * cols;
-          const rowBookmarks = bookmarks.slice(startIdx, startIdx + cols);
-          return (
-            <div
-              key={vRow.index}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-              role="listitem"
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                transform: `translateY(${vRow.start}px)`,
-              }}
-            >
-              {rowBookmarks.map((bm) => (
-                <BookmarkCard key={bm.id} bookmark={bm} />
-              ))}
-            </div>
-          );
-        })}
-      </div>
+      <SortableContext items={ids} strategy={rectSortingStrategy}>
+        <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+          {virtualizer.getVirtualItems().map((vRow) => {
+            const startIdx = vRow.index * cols;
+            const rowBookmarks = bookmarks.slice(startIdx, startIdx + cols);
+            return (
+              <div
+                key={vRow.index}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                role="listitem"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${vRow.start}px)`,
+                }}
+              >
+                {rowBookmarks.map((bm) => (
+                  <BookmarkCard key={bm.id} bookmark={bm} />
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      </SortableContext>
     </div>
   );
 }

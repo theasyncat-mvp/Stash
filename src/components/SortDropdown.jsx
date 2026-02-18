@@ -3,6 +3,7 @@ import { useBookmarkStore } from '../store/useBookmarkStore.js';
 import Dropdown from './ui/Dropdown.jsx';
 
 const sortOptions = [
+  { value: 'manual', label: 'Manual order' },
   { value: 'newest', label: 'Newest first' },
   { value: 'oldest', label: 'Oldest first' },
   { value: 'title-asc', label: 'Title A-Z' },

@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Star, Archive, ExternalLink, Trash2, Clock } from 'lucide-react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Star, Archive, ExternalLink, Trash2, Clock, GripVertical } from 'lucide-react';
 import { open as shellOpen } from '@tauri-apps/plugin-shell';
 import { useBookmarkStore } from '../store/useBookmarkStore.js';
 import { timeAgo } from '../lib/timeAgo.js';
@@ -8,6 +10,18 @@ import ContextMenu from './ContextMenu.jsx';
 export default function BookmarkRow({ bookmark }) {
   const { setSelectedBookmark, toggleFavorite, toggleArchive, deleteBookmark, bulkMode, selectedIds, toggleSelected } = useBookmarkStore();
   const [contextMenu, setContextMenu] = useState(null);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: bookmark.id,
+    data: { type: 'bookmark', bookmark },
+  });
 
   const domain = (() => {
     try { return new URL(bookmark.url).hostname.replace('www.', ''); }
@@ -32,6 +46,12 @@ export default function BookmarkRow({ bookmark }) {
   return (
     <>
       <div
+        ref={setNodeRef}
+        style={{
+          transform: CSS.Transform.toString(transform),
+          transition,
+          opacity: isDragging ? 0.4 : 1,
+        }}
         className={`group flex items-center gap-3 px-4 py-2.5 rounded-lg cursor-pointer transition-colors duration-150 ${
           isSelected
             ? 'bg-blue-50 dark:bg-blue-500/10'
@@ -39,7 +59,19 @@ export default function BookmarkRow({ bookmark }) {
         }`}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
+        {...attributes}
       >
+        {/* Drag handle */}
+        {!bulkMode && (
+          <div
+            {...listeners}
+            className="text-zinc-300 dark:text-zinc-600 opacity-0 group-hover:opacity-100 hover:text-zinc-500 dark:hover:text-zinc-400 cursor-grab active:cursor-grabbing shrink-0 transition-opacity duration-150"
+            aria-label="Drag to reorder"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical size={14} aria-hidden="true" />
+          </div>
+        )}
         {bulkMode && (
           <input
             type="checkbox"

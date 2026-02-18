@@ -14,6 +14,7 @@ import AddCollection from './AddCollection.jsx';
 import CommandPalette from './CommandPalette.jsx';
 import KeyboardShortcuts from './KeyboardShortcuts.jsx';
 import ToastContainer from './Toast.jsx';
+import DndProvider from './DndProvider.jsx';
 
 export default function Layout() {
   const { activeView, selectedBookmarkId, collections, setActiveView, setSelectedBookmark, toggleBulkMode, bulkMode, setViewMode } = useBookmarkStore();
@@ -95,6 +96,7 @@ export default function Layout() {
   };
 
   return (
+    <DndProvider>
     <div className="flex h-screen bg-[#FAFAFA] dark:bg-zinc-950">
       {/* Mobile sidebar overlay */}
       {mobileOpen && (
@@ -180,5 +182,6 @@ export default function Layout() {
 
       <ToastContainer />
     </div>
+    </DndProvider>
   );
 }

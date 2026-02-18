@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useDroppable } from '@dnd-kit/core';
 import {
   Inbox, Bookmark, Star, Archive, Tag,
   ChevronRight, ChevronDown, PanelLeftClose, PanelLeft, Command,
@@ -13,8 +14,8 @@ import ImportExport from './ImportExport.jsx';
 const navItems = [
   { id: 'inbox', label: 'Inbox', icon: Inbox, key: '1' },
   { id: 'all', label: 'All Bookmarks', icon: Bookmark, key: '2' },
-  { id: 'favorites', label: 'Favorites', icon: Star, key: '3' },
-  { id: 'archive', label: 'Archive', icon: Archive, key: '4' },
+  { id: 'favorites', label: 'Favorites', icon: Star, key: '3', droppable: true },
+  { id: 'archive', label: 'Archive', icon: Archive, key: '4', droppable: true },
 ];
 
 export default function Sidebar({ collapsed, onToggle, onAddFeed, onAddCollection, onMobileClose }) {
@@ -81,30 +82,15 @@ export default function Sidebar({ collapsed, onToggle, onAddFeed, onAddCollectio
 
       <nav className="flex-1 overflow-y-auto px-2 py-1 space-y-5">
         <div className="space-y-0.5">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeView === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleNav(item.id)}
-                className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-colors duration-150 cursor-pointer ${
-                  isActive
-                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                    : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800'
-                }`}
-              >
-                <Icon size={16} />
-                <span className="text-sm flex-1">{item.label}</span>
-                {item.id === 'inbox' && inboxCount > 0 && (
-                  <span className="text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded-full min-w-20px text-center font-medium">
-                    {inboxCount}
-                  </span>
-                )}
-                <kbd className="text-[10px] text-zinc-300 dark:text-zinc-600">{item.key}</kbd>
-              </button>
-            );
-          })}
+          {navItems.map((item) => (
+            <DroppableNavItem
+              key={item.id}
+              item={item}
+              isActive={activeView === item.id}
+              inboxCount={item.id === 'inbox' ? inboxCount : 0}
+              onNav={handleNav}
+            />
+          ))}
         </div>
 
         <div>
@@ -118,24 +104,14 @@ export default function Sidebar({ collapsed, onToggle, onAddFeed, onAddCollectio
           </button>
           {tagsOpen && (
             <div className="space-y-0.5">
-              {tags.map((tag) => {
-                const isActive = activeView === `tag:${tag.name}`;
-                return (
-                  <button
-                    key={tag.name}
-                    onClick={() => handleNav(`tag:${tag.name}`)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-colors duration-150 cursor-pointer ${
-                      isActive
-                        ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                        : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800'
-                    }`}
-                  >
-                    <Tag size={14} className="shrink-0" />
-                    <span className="text-sm truncate flex-1">{tag.name}</span>
-                    <span className="text-xs text-zinc-400 dark:text-zinc-500">{tag.count}</span>
-                  </button>
-                );
-              })}
+              {tags.map((tag) => (
+                <DroppableTagItem
+                  key={tag.name}
+                  tag={tag}
+                  isActive={activeView === `tag:${tag.name}`}
+                  onNav={handleNav}
+                />
+              ))}
               {tags.length === 0 && (
                 <p className="px-3 text-xs text-zinc-400 dark:text-zinc-500">No tags yet</p>
               )}
@@ -158,5 +134,64 @@ export default function Sidebar({ collapsed, onToggle, onAddFeed, onAddCollectio
         </div>
       </div>
     </div>
+  );
+}
+
+/* ── Droppable nav item (favorites, archive accept drops) ── */
+function DroppableNavItem({ item, isActive, inboxCount, onNav }) {
+  const Icon = item.icon;
+  const { setNodeRef, isOver } = useDroppable({
+    id: `nav-${item.id}`,
+    data: { type: 'nav', id: item.id },
+    disabled: !item.droppable,
+  });
+
+  return (
+    <button
+      ref={item.droppable ? setNodeRef : undefined}
+      onClick={() => onNav(item.id)}
+      className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-colors duration-150 cursor-pointer ${
+        isOver
+          ? 'bg-blue-100 dark:bg-blue-500/20 ring-2 ring-blue-400/50'
+          : isActive
+            ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
+            : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800'
+      }`}
+    >
+      <Icon size={16} />
+      <span className="text-sm flex-1">{item.label}</span>
+      {item.id === 'inbox' && inboxCount > 0 && (
+        <span className="text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded-full min-w-20px text-center font-medium">
+          {inboxCount}
+        </span>
+      )}
+      <kbd className="text-[10px] text-zinc-300 dark:text-zinc-600">{item.key}</kbd>
+    </button>
+  );
+}
+
+/* ── Droppable tag item ── */
+function DroppableTagItem({ tag, isActive, onNav }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `tag-${tag.name}`,
+    data: { type: 'tag', id: tag.name },
+  });
+
+  return (
+    <button
+      ref={setNodeRef}
+      onClick={() => onNav(`tag:${tag.name}`)}
+      className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-colors duration-150 cursor-pointer ${
+        isOver
+          ? 'bg-blue-100 dark:bg-blue-500/20 ring-2 ring-blue-400/50'
+          : isActive
+            ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
+            : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800'
+      }`}
+    >
+      <Tag size={14} className="shrink-0" />
+      <span className="text-sm truncate flex-1">{tag.name}</span>
+      <span className="text-xs text-zinc-400 dark:text-zinc-500">{tag.count}</span>
+    </button>
   );
 }

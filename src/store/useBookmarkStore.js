@@ -312,6 +312,60 @@ export const useBookmarkStore = create((set, get) => ({
     await saveBookmarks(bookmarks);
   },
 
+  // Drag-and-drop: reorder bookmarks in the master list
+  reorderBookmarks: async (activeId, overId) => {
+    const bookmarks = [...get().bookmarks];
+    const oldIndex = bookmarks.findIndex((b) => b.id === activeId);
+    const newIndex = bookmarks.findIndex((b) => b.id === overId);
+    if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+    const [moved] = bookmarks.splice(oldIndex, 1);
+    bookmarks.splice(newIndex, 0, moved);
+    set({ bookmarks, sortBy: 'manual' });
+    await saveBookmarks(bookmarks);
+  },
+
+  // Drag-and-drop: move bookmark to a collection by dropping
+  dragToCollection: async (bookmarkId, collectionId) => {
+    const bookmark = get().bookmarks.find((b) => b.id === bookmarkId);
+    if (!bookmark || bookmark.collectionId === collectionId) return;
+    const bookmarks = get().bookmarks.map((b) =>
+      b.id === bookmarkId ? { ...b, collectionId, updatedAt: Date.now() } : b
+    );
+    set({ bookmarks });
+    await saveBookmarks(bookmarks);
+    const col = get().collections.find((c) => c.id === collectionId);
+    useToastStore.getState().success(`Moved to "${col?.name || 'collection'}"`);
+  },
+
+  // Drag-and-drop: tag a bookmark by dropping onto a tag
+  dragToTag: async (bookmarkId, tagName) => {
+    const bookmark = get().bookmarks.find((b) => b.id === bookmarkId);
+    if (!bookmark || bookmark.tags.includes(tagName)) return;
+    const bookmarks = get().bookmarks.map((b) => {
+      if (b.id !== bookmarkId) return b;
+      return { ...b, tags: [...b.tags, tagName], updatedAt: Date.now() };
+    });
+    set({ bookmarks });
+    await saveBookmarks(bookmarks);
+    useToastStore.getState().success(`Tagged with "${tagName}"`);
+  },
+
+  // Drag-and-drop: archive / favorite by dropping on nav items
+  dragToView: async (bookmarkId, viewId) => {
+    const bookmark = get().bookmarks.find((b) => b.id === bookmarkId);
+    if (!bookmark) return;
+    let changes = {};
+    if (viewId === 'favorites' && !bookmark.isFavorite) changes = { isFavorite: true };
+    else if (viewId === 'archive' && !bookmark.isArchived) changes = { isArchived: true };
+    else return;
+    const bookmarks = get().bookmarks.map((b) =>
+      b.id === bookmarkId ? { ...b, ...changes, updatedAt: Date.now() } : b
+    );
+    set({ bookmarks });
+    await saveBookmarks(bookmarks);
+    useToastStore.getState().success(viewId === 'favorites' ? 'Added to favorites' : 'Archived');
+  },
+
   // Import
   importBookmarksData: async (newBookmarks) => {
     const bookmarks = [...get().bookmarks, ...newBookmarks];
@@ -379,6 +433,7 @@ export const useBookmarkStore = create((set, get) => ({
 }));
 
 function sortBookmarks(bookmarks, sortBy) {
+  if (sortBy === 'manual') return bookmarks; // user-defined order, no sorting
   const sorted = [...bookmarks];
   switch (sortBy) {
     case 'newest':
