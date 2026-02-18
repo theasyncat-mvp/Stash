@@ -62,7 +62,7 @@ export default function BookmarkDetail() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="bookmark-detail-title"
-        className="fixed right-0 top-0 bottom-0 z-40 w-420px max-w-full bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 overflow-y-auto shadow-xl animate-slideInRight"
+        className="fixed right-0 top-9 bottom-0 z-40 w-420px max-w-full bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 overflow-y-auto shadow-xl animate-slideInRight"
       >
         <div className="sticky top-0 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 px-4 py-3 flex items-center justify-between z-10">
           <h2 id="bookmark-detail-title" className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate">Details</h2>
