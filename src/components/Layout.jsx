@@ -100,7 +100,7 @@ export default function Layout() {
 
   return (
     <DndProvider>
-    <div className="flex h-screen bg-[#FAFAFA] dark:bg-zinc-950">
+    <div className="flex flex-1 min-h-0 bg-[#FAFAFA] dark:bg-zinc-950">
       {/* Mobile sidebar overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 z-40 bg-black/30 lg:hidden animate-fadeIn" onClick={() => setMobileOpen(false)} />
