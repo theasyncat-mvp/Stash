@@ -11,14 +11,31 @@ const REMOVE_SELECTORS = [
 export async function fetchReadableContent(url) {
   try {
     const html = await fetchUrl(url);
-    return extractReadableContent(html);
+    return extractReadableContent(html, url);
   } catch {
     return null;
   }
 }
 
-export function extractReadableContent(htmlString) {
+export function extractReadableContent(htmlString, baseUrl) {
   const doc = new DOMParser().parseFromString(htmlString, 'text/html');
+
+  // Resolve relative image/link URLs to absolute before any cleaning
+  if (baseUrl) {
+    try {
+      const base = new URL(baseUrl);
+      doc.querySelectorAll('img[src]').forEach((img) => {
+        try {
+          img.setAttribute('src', new URL(img.getAttribute('src'), base).href);
+        } catch {}
+      });
+      doc.querySelectorAll('a[href]').forEach((a) => {
+        try {
+          a.setAttribute('href', new URL(a.getAttribute('href'), base).href);
+        } catch {}
+      });
+    } catch {}
+  }
 
   REMOVE_SELECTORS.forEach((sel) => {
     doc.querySelectorAll(sel).forEach((el) => el.remove());
@@ -36,12 +53,17 @@ export function extractReadableContent(htmlString) {
     ALLOWED_TAGS: [
       'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'a', 'img', 'ul', 'ol', 'li',
       'blockquote', 'pre', 'code', 'em', 'strong', 'br', 'figure', 'figcaption',
-      'table', 'thead', 'tbody', 'tr', 'th', 'td',
+      'table', 'thead', 'tbody', 'tr', 'th', 'td', 'sup', 'sub', 'hr', 'span',
+      'details', 'summary', 'dl', 'dt', 'dd', 'mark', 'abbr', 'time',
     ],
-    ALLOWED_ATTR: ['href', 'src', 'alt', 'title'],
+    ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'datetime', 'loading'],
+    // Add loading="lazy" to all images automatically
+    FORBID_ATTR: [],
   });
 
-  return cleaned || null;
+  // Post-process: add loading=lazy to images
+  const result = cleaned?.replace(/<img /g, '<img loading="lazy" ') || null;
+  return result;
 }
 
 function findLargestContentBlock(doc) {
