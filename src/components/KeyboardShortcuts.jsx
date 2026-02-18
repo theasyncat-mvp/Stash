@@ -25,7 +25,7 @@ export default function KeyboardShortcuts({ onClose }) {
               {s.keys.map((key) => (
                 <kbd
                   key={key}
-                  className="text-[11px] text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-1.5 py-0.5 rounded min-w-[24px] text-center"
+                  className="text-[11px] text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-1.5 py-0.5 rounded min-w-24px text-center"
                 >
                   {key}
                 </kbd>

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useBookmarkStore, useAllTags } from '../store/useBookmarkStore.js';
 import { useFeedStore } from '../store/useFeedStore.js';
+import { fuzzySearch } from '../lib/search.js';
 
 export default function CommandPalette({ onClose, onAddBookmark, onAddFeed, onAddCollection }) {
   const [query, setQuery] = useState('');
@@ -61,12 +62,7 @@ export default function CommandPalette({ onClose, onAddBookmark, onAddFeed, onAd
     });
 
     if (query.trim()) {
-      const q = query.toLowerCase();
-      const matchingBookmarks = bookmarks
-        .filter((b) =>
-          (b.title && b.title.toLowerCase().includes(q)) ||
-          (b.url && b.url.toLowerCase().includes(q))
-        )
+      const matchingBookmarks = fuzzySearch(bookmarks, query, ['title', 'url'], { threshold: 0.35 })
         .slice(0, 8);
 
       matchingBookmarks.forEach((b) => {
@@ -89,8 +85,7 @@ export default function CommandPalette({ onClose, onAddBookmark, onAddFeed, onAd
 
   const filtered = useMemo(() => {
     if (!query.trim()) return commands;
-    const q = query.toLowerCase();
-    return commands.filter((c) => c.label.toLowerCase().includes(q) || (c.meta && c.meta.toLowerCase().includes(q)));
+    return fuzzySearch(commands, query, ['label', 'meta']);
   }, [commands, query]);
 
   useEffect(() => {

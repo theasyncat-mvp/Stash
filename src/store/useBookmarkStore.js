@@ -347,7 +347,8 @@ export const useBookmarkStore = create((set, get) => ({
       filtered = bookmarks;
     }
 
-    return sortBookmarks(filtered, sortBy);
+    // When searching, preserve Fuse.js relevance order; otherwise apply user sort.
+    return activeView === 'search' ? filtered : sortBookmarks(filtered, sortBy);
   },
 
   getAllTags: () => {
