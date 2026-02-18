@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import {
   Inbox, Bookmark, Star, Archive, Tag,
-  ChevronRight, ChevronDown, PanelLeftClose, PanelLeft, Command,
+  ChevronRight, ChevronDown, PanelLeftClose, PanelLeft, Command, Keyboard,
 } from 'lucide-react';
 import { useBookmarkStore, useAllTags, useInboxCount } from '../store/useBookmarkStore.js';
 import SearchBar from './SearchBar.jsx';
@@ -10,6 +10,7 @@ import FeedList from './FeedList.jsx';
 import CollectionList from './CollectionList.jsx';
 import ThemeToggle from './ThemeToggle.jsx';
 import ImportExport from './ImportExport.jsx';
+import KeyboardShortcuts from './KeyboardShortcuts.jsx';
 
 const navItems = [
   { id: 'inbox', label: 'Inbox', icon: Inbox, key: '1' },
@@ -21,6 +22,7 @@ const navItems = [
 export default function Sidebar({ collapsed, onToggle, onAddFeed, onAddCollection, onMobileClose }) {
   const { activeView, setActiveView } = useBookmarkStore();
   const [tagsOpen, setTagsOpen] = useState(true);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   const inboxCount = useInboxCount();
   const tags = useAllTags();
@@ -126,13 +128,24 @@ export default function Sidebar({ collapsed, onToggle, onAddFeed, onAddCollectio
       <div className="px-3 py-2 border-t border-zinc-200 dark:border-zinc-800 space-y-1">
         <div className="flex items-center justify-between">
           <ThemeToggle />
-          <ImportExport />
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setShowShortcuts(true)}
+              className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg transition-colors duration-150 cursor-pointer"
+              title="Keyboard shortcuts (?)"
+            >
+              <Keyboard size={15} />
+            </button>
+            <ImportExport />
+          </div>
         </div>
         <div className="flex items-center gap-1 text-[10px] text-zinc-300 dark:text-zinc-600 px-1">
           <Command size={9} />
           <span>Ctrl+K for command palette</span>
         </div>
       </div>
+
+      {showShortcuts && <KeyboardShortcuts onClose={() => setShowShortcuts(false)} />}
     </div>
   );
 }
