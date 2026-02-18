@@ -1,6 +1,7 @@
 import { FolderOpen, Plus, Trash2 } from 'lucide-react';
 import { useDroppable } from '@dnd-kit/core';
 import { useBookmarkStore } from '../store/useBookmarkStore.js';
+import { useConfirmStore } from '../store/useConfirmStore.js';
 
 export default function CollectionList({ onAddCollection }) {
   const { collections, bookmarks, activeView, setActiveView, deleteCollection } = useBookmarkStore();
@@ -9,9 +10,15 @@ export default function CollectionList({ onAddCollection }) {
     return bookmarks.filter((b) => b.collectionId === collectionId).length;
   };
 
-  const handleDelete = (e, id) => {
+  const handleDelete = async (e, id) => {
     e.stopPropagation();
-    if (confirm('Delete this collection? Bookmarks will become uncollected.')) {
+    const confirmed = await useConfirmStore.getState().confirm({
+      title: 'Delete collection?',
+      message: 'Bookmarks in this collection will become uncollected.',
+      confirmLabel: 'Delete',
+      confirmVariant: 'danger',
+    });
+    if (confirmed) {
       deleteCollection(id);
       if (activeView === `collection:${id}`) {
         setActiveView('all');

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Rss, RefreshCw, Plus, Trash2, Settings } from 'lucide-react';
 import { useFeedStore } from '../store/useFeedStore.js';
 import { useBookmarkStore } from '../store/useBookmarkStore.js';
+import { useConfirmStore } from '../store/useConfirmStore.js';
 
 const refreshOptions = [
   { value: 0, label: 'Manual only' },
@@ -29,9 +30,15 @@ export default function FeedList({ onAddFeed }) {
     return bookmarks.filter((b) => b.feedId === feedId && !b.isRead).length;
   };
 
-  const handleRemoveFeed = (e, feedId) => {
+  const handleRemoveFeed = async (e, feedId) => {
     e.stopPropagation();
-    if (confirm('Remove this feed and all its articles?')) {
+    const confirmed = await useConfirmStore.getState().confirm({
+      title: 'Remove feed?',
+      message: 'This will remove the feed and all its articles.',
+      confirmLabel: 'Remove',
+      confirmVariant: 'danger',
+    });
+    if (confirmed) {
       removeFeed(feedId);
       if (activeView === `feed:${feedId}`) {
         setActiveView('all');
@@ -56,7 +63,7 @@ export default function FeedList({ onAddFeed }) {
               <Settings size={12} />
             </button>
             {showSettings && (
-              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg py-1 min-w-[160px] z-20 animate-scaleIn">
+              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg py-1 min-w-160px z-20 animate-scaleIn">
                 <div className="px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-zinc-400">Auto-refresh</div>
                 {refreshOptions.map((opt) => (
                   <button
@@ -114,7 +121,7 @@ export default function FeedList({ onAddFeed }) {
               <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" title="Feed has errors" />
             )}
             {unread > 0 && (
-              <span className="text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded-full min-w-[20px] text-center font-medium">
+              <span className="text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded-full min-w-20px text-center font-medium">
                 {unread}
               </span>
             )}

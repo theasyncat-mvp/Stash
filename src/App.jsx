@@ -3,6 +3,7 @@ import { useBookmarkStore } from './store/useBookmarkStore.js';
 import { useFeedStore } from './store/useFeedStore.js';
 import { useThemeStore } from './store/useThemeStore.js';
 import Layout from './components/Layout.jsx';
+import ConfirmDialog from './components/ConfirmDialog.jsx';
 
 export default function App() {
   const loadAll = useBookmarkStore((s) => s.loadAll);
@@ -24,5 +25,10 @@ export default function App() {
     );
   }
 
-  return <Layout />;
+  return (
+    <>
+      <Layout />
+      <ConfirmDialog />
+    </>
+  );
 }

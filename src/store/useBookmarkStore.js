@@ -5,6 +5,7 @@ import { loadBookmarks, saveBookmarks, loadCollections, saveCollections } from '
 import { fetchMetadata } from '../lib/metadata.js';
 import { searchBookmarks } from '../lib/search.js';
 import { useToastStore } from './useToastStore.js';
+import { useConfirmStore } from './useConfirmStore.js';
 
 function normalizeUrl(url) {
   try {
@@ -110,6 +111,14 @@ export const useBookmarkStore = create((set, get) => ({
     const bookmark = get().bookmarks.find((b) => b.id === id);
     if (!bookmark) return;
 
+    const confirmed = await useConfirmStore.getState().confirm({
+      title: 'Delete bookmark?',
+      message: `"${bookmark.title || bookmark.url}" will be removed.`,
+      confirmLabel: 'Delete',
+      confirmVariant: 'danger',
+    });
+    if (!confirmed) return;
+
     const bookmarks = get().bookmarks.filter((b) => b.id !== id);
     const selected = get().selectedIds;
     selected.delete(id);
@@ -132,26 +141,42 @@ export const useBookmarkStore = create((set, get) => ({
 
   toggleFavorite: async (id) => {
     const bookmark = get().bookmarks.find((b) => b.id === id);
+    if (!bookmark) return;
+    const wasFavorite = bookmark.isFavorite;
     const bookmarks = get().bookmarks.map((b) =>
       b.id === id ? { ...b, isFavorite: !b.isFavorite, updatedAt: Date.now() } : b
     );
     set({ bookmarks });
     await saveBookmarks(bookmarks);
-    if (bookmark) {
-      useToastStore.getState().success(bookmark.isFavorite ? 'Removed from favorites' : 'Added to favorites');
-    }
+    useToastStore.getState().success(wasFavorite ? 'Removed from favorites' : 'Added to favorites', {
+      undoAction: async () => {
+        const reverted = get().bookmarks.map((b) =>
+          b.id === id ? { ...b, isFavorite: wasFavorite, updatedAt: Date.now() } : b
+        );
+        set({ bookmarks: reverted });
+        await saveBookmarks(reverted);
+      },
+    });
   },
 
   toggleArchive: async (id) => {
     const bookmark = get().bookmarks.find((b) => b.id === id);
+    if (!bookmark) return;
+    const wasArchived = bookmark.isArchived;
     const bookmarks = get().bookmarks.map((b) =>
       b.id === id ? { ...b, isArchived: !b.isArchived, updatedAt: Date.now() } : b
     );
     set({ bookmarks });
     await saveBookmarks(bookmarks);
-    if (bookmark) {
-      useToastStore.getState().success(bookmark.isArchived ? 'Unarchived' : 'Archived');
-    }
+    useToastStore.getState().success(wasArchived ? 'Unarchived' : 'Archived', {
+      undoAction: async () => {
+        const reverted = get().bookmarks.map((b) =>
+          b.id === id ? { ...b, isArchived: wasArchived, updatedAt: Date.now() } : b
+        );
+        set({ bookmarks: reverted });
+        await saveBookmarks(reverted);
+      },
+    });
   },
 
   toggleRead: async (id) => {
@@ -163,22 +188,46 @@ export const useBookmarkStore = create((set, get) => ({
   },
 
   addTag: async (bookmarkId, tag) => {
+    const bookmark = get().bookmarks.find((b) => b.id === bookmarkId);
+    if (!bookmark || bookmark.tags.includes(tag)) return;
     const bookmarks = get().bookmarks.map((b) => {
       if (b.id !== bookmarkId) return b;
-      if (b.tags.includes(tag)) return b;
       return { ...b, tags: [...b.tags, tag], updatedAt: Date.now() };
     });
     set({ bookmarks });
     await saveBookmarks(bookmarks);
+    useToastStore.getState().success(`Tag "${tag}" added`, {
+      undoAction: async () => {
+        const reverted = get().bookmarks.map((b) => {
+          if (b.id !== bookmarkId) return b;
+          return { ...b, tags: b.tags.filter((t) => t !== tag), updatedAt: Date.now() };
+        });
+        set({ bookmarks: reverted });
+        await saveBookmarks(reverted);
+      },
+    });
   },
 
   removeTag: async (bookmarkId, tag) => {
+    const bookmark = get().bookmarks.find((b) => b.id === bookmarkId);
+    if (!bookmark || !bookmark.tags.includes(tag)) return;
     const bookmarks = get().bookmarks.map((b) => {
       if (b.id !== bookmarkId) return b;
       return { ...b, tags: b.tags.filter((t) => t !== tag), updatedAt: Date.now() };
     });
     set({ bookmarks });
     await saveBookmarks(bookmarks);
+    useToastStore.getState().success(`Tag "${tag}" removed`, {
+      undoAction: async () => {
+        const reverted = get().bookmarks.map((b) => {
+          if (b.id !== bookmarkId) return b;
+          if (b.tags.includes(tag)) return b;
+          return { ...b, tags: [...b.tags, tag], updatedAt: Date.now() };
+        });
+        set({ bookmarks: reverted });
+        await saveBookmarks(reverted);
+      },
+    });
   },
 
   setActiveView: (view) => set({ activeView: view, selectedBookmarkId: null, bulkMode: false, selectedIds: new Set() }),
@@ -220,6 +269,15 @@ export const useBookmarkStore = create((set, get) => ({
   bulkDelete: async () => {
     const ids = get().selectedIds;
     if (ids.size === 0) return;
+
+    const confirmed = await useConfirmStore.getState().confirm({
+      title: `Delete ${ids.size} bookmark${ids.size > 1 ? 's' : ''}?`,
+      message: 'This will remove the selected bookmarks.',
+      confirmLabel: 'Delete',
+      confirmVariant: 'danger',
+    });
+    if (!confirmed) return;
+
     const deletedBookmarks = get().bookmarks.filter((b) => ids.has(b.id));
     const bookmarks = get().bookmarks.filter((b) => !ids.has(b.id));
     set({ bookmarks, selectedIds: new Set(), bulkMode: false });
@@ -237,37 +295,82 @@ export const useBookmarkStore = create((set, get) => ({
   bulkArchive: async () => {
     const ids = get().selectedIds;
     if (ids.size === 0) return;
+    const prevStates = new Map();
+    get().bookmarks.forEach((b) => {
+      if (ids.has(b.id)) prevStates.set(b.id, b.isArchived);
+    });
     const bookmarks = get().bookmarks.map((b) =>
       ids.has(b.id) ? { ...b, isArchived: true, updatedAt: Date.now() } : b
     );
+    const count = ids.size;
     set({ bookmarks, selectedIds: new Set(), bulkMode: false });
     await saveBookmarks(bookmarks);
-    useToastStore.getState().success(`Archived ${ids.size} bookmarks`);
+    useToastStore.getState().success(`Archived ${count} bookmarks`, {
+      undoAction: async () => {
+        const reverted = get().bookmarks.map((b) => {
+          if (!prevStates.has(b.id)) return b;
+          return { ...b, isArchived: prevStates.get(b.id), updatedAt: Date.now() };
+        });
+        set({ bookmarks: reverted });
+        await saveBookmarks(reverted);
+        useToastStore.getState().success(`Unarchived ${count} bookmarks`);
+      },
+    });
   },
 
   bulkTag: async (tag) => {
     const ids = get().selectedIds;
     if (ids.size === 0) return;
+    const alreadyTagged = new Set();
+    get().bookmarks.forEach((b) => {
+      if (ids.has(b.id) && b.tags.includes(tag)) alreadyTagged.add(b.id);
+    });
     const bookmarks = get().bookmarks.map((b) => {
       if (!ids.has(b.id)) return b;
       if (b.tags.includes(tag)) return b;
       return { ...b, tags: [...b.tags, tag], updatedAt: Date.now() };
     });
+    const count = ids.size;
     set({ bookmarks, selectedIds: new Set(), bulkMode: false });
     await saveBookmarks(bookmarks);
-    useToastStore.getState().success(`Tagged ${ids.size} bookmarks with "${tag}"`);
+    useToastStore.getState().success(`Tagged ${count} bookmarks with "${tag}"`, {
+      undoAction: async () => {
+        const reverted = get().bookmarks.map((b) => {
+          if (!ids.has(b.id) || alreadyTagged.has(b.id)) return b;
+          return { ...b, tags: b.tags.filter((t) => t !== tag), updatedAt: Date.now() };
+        });
+        set({ bookmarks: reverted });
+        await saveBookmarks(reverted);
+        useToastStore.getState().success(`Removed tag "${tag}" from ${count} bookmarks`);
+      },
+    });
   },
 
   bulkMoveToCollection: async (collectionId) => {
     const ids = get().selectedIds;
     if (ids.size === 0) return;
+    const prevCollections = new Map();
+    get().bookmarks.forEach((b) => {
+      if (ids.has(b.id)) prevCollections.set(b.id, b.collectionId);
+    });
     const bookmarks = get().bookmarks.map((b) =>
       ids.has(b.id) ? { ...b, collectionId, updatedAt: Date.now() } : b
     );
+    const count = ids.size;
     set({ bookmarks, selectedIds: new Set(), bulkMode: false });
     await saveBookmarks(bookmarks);
     const col = get().collections.find((c) => c.id === collectionId);
-    useToastStore.getState().success(`Moved ${ids.size} bookmarks to "${col?.name || 'collection'}"`);
+    useToastStore.getState().success(`Moved ${count} bookmarks to "${col?.name || 'collection'}"`, {
+      undoAction: async () => {
+        const reverted = get().bookmarks.map((b) => {
+          if (!prevCollections.has(b.id)) return b;
+          return { ...b, collectionId: prevCollections.get(b.id), updatedAt: Date.now() };
+        });
+        set({ bookmarks: reverted });
+        await saveBookmarks(reverted);
+        useToastStore.getState().success(`Moved ${count} bookmarks back`);
+      },
+    });
   },
 
   // Collections
@@ -295,21 +398,48 @@ export const useBookmarkStore = create((set, get) => ({
 
   deleteCollection: async (id) => {
     const col = get().collections.find((c) => c.id === id);
+    const affectedBookmarks = get().bookmarks.filter((b) => b.collectionId === id);
+    const affectedIds = new Set(affectedBookmarks.map((b) => b.id));
     const collections = get().collections.filter((c) => c.id !== id);
     const bookmarks = get().bookmarks.map((b) =>
       b.collectionId === id ? { ...b, collectionId: null, updatedAt: Date.now() } : b
     );
     set({ collections, bookmarks });
     await Promise.all([saveCollections(collections), saveBookmarks(bookmarks)]);
-    if (col) useToastStore.getState().success(`Collection "${col.name}" deleted`);
+    if (col) {
+      useToastStore.getState().success(`Collection "${col.name}" deleted`, {
+        undoAction: async () => {
+          const restoredCollections = [...get().collections, col];
+          const restoredBookmarks = get().bookmarks.map((b) =>
+            affectedIds.has(b.id) ? { ...b, collectionId: id, updatedAt: Date.now() } : b
+          );
+          set({ collections: restoredCollections, bookmarks: restoredBookmarks });
+          await Promise.all([saveCollections(restoredCollections), saveBookmarks(restoredBookmarks)]);
+          useToastStore.getState().success(`Collection "${col.name}" restored`);
+        },
+      });
+    }
   },
 
   moveToCollection: async (bookmarkId, collectionId) => {
+    const bookmark = get().bookmarks.find((b) => b.id === bookmarkId);
+    if (!bookmark) return;
+    const prevCollectionId = bookmark.collectionId;
     const bookmarks = get().bookmarks.map((b) =>
       b.id === bookmarkId ? { ...b, collectionId, updatedAt: Date.now() } : b
     );
     set({ bookmarks });
     await saveBookmarks(bookmarks);
+    const col = get().collections.find((c) => c.id === collectionId);
+    useToastStore.getState().success(collectionId ? `Moved to "${col?.name || 'collection'}"` : 'Removed from collection', {
+      undoAction: async () => {
+        const reverted = get().bookmarks.map((b) =>
+          b.id === bookmarkId ? { ...b, collectionId: prevCollectionId, updatedAt: Date.now() } : b
+        );
+        set({ bookmarks: reverted });
+        await saveBookmarks(reverted);
+      },
+    });
   },
 
   // Drag-and-drop: reorder bookmarks in the master list
@@ -328,13 +458,22 @@ export const useBookmarkStore = create((set, get) => ({
   dragToCollection: async (bookmarkId, collectionId) => {
     const bookmark = get().bookmarks.find((b) => b.id === bookmarkId);
     if (!bookmark || bookmark.collectionId === collectionId) return;
+    const prevCollectionId = bookmark.collectionId;
     const bookmarks = get().bookmarks.map((b) =>
       b.id === bookmarkId ? { ...b, collectionId, updatedAt: Date.now() } : b
     );
     set({ bookmarks });
     await saveBookmarks(bookmarks);
     const col = get().collections.find((c) => c.id === collectionId);
-    useToastStore.getState().success(`Moved to "${col?.name || 'collection'}"`);
+    useToastStore.getState().success(`Moved to "${col?.name || 'collection'}"`, {
+      undoAction: async () => {
+        const reverted = get().bookmarks.map((b) =>
+          b.id === bookmarkId ? { ...b, collectionId: prevCollectionId, updatedAt: Date.now() } : b
+        );
+        set({ bookmarks: reverted });
+        await saveBookmarks(reverted);
+      },
+    });
   },
 
   // Drag-and-drop: tag a bookmark by dropping onto a tag
@@ -347,7 +486,16 @@ export const useBookmarkStore = create((set, get) => ({
     });
     set({ bookmarks });
     await saveBookmarks(bookmarks);
-    useToastStore.getState().success(`Tagged with "${tagName}"`);
+    useToastStore.getState().success(`Tagged with "${tagName}"`, {
+      undoAction: async () => {
+        const reverted = get().bookmarks.map((b) => {
+          if (b.id !== bookmarkId) return b;
+          return { ...b, tags: b.tags.filter((t) => t !== tagName), updatedAt: Date.now() };
+        });
+        set({ bookmarks: reverted });
+        await saveBookmarks(reverted);
+      },
+    });
   },
 
   // Drag-and-drop: archive / favorite by dropping on nav items
@@ -358,12 +506,21 @@ export const useBookmarkStore = create((set, get) => ({
     if (viewId === 'favorites' && !bookmark.isFavorite) changes = { isFavorite: true };
     else if (viewId === 'archive' && !bookmark.isArchived) changes = { isArchived: true };
     else return;
+    const prevState = { isFavorite: bookmark.isFavorite, isArchived: bookmark.isArchived };
     const bookmarks = get().bookmarks.map((b) =>
       b.id === bookmarkId ? { ...b, ...changes, updatedAt: Date.now() } : b
     );
     set({ bookmarks });
     await saveBookmarks(bookmarks);
-    useToastStore.getState().success(viewId === 'favorites' ? 'Added to favorites' : 'Archived');
+    useToastStore.getState().success(viewId === 'favorites' ? 'Added to favorites' : 'Archived', {
+      undoAction: async () => {
+        const reverted = get().bookmarks.map((b) =>
+          b.id === bookmarkId ? { ...b, ...prevState, updatedAt: Date.now() } : b
+        );
+        set({ bookmarks: reverted });
+        await saveBookmarks(reverted);
+      },
+    });
   },
 
   // Import
