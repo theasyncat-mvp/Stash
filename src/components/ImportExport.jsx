@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Download, Upload, MoreHorizontal } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { readTextFile } from '@tauri-apps/plugin-fs';
@@ -6,34 +5,34 @@ import { useBookmarkStore } from '../store/useBookmarkStore.js';
 import { useFeedStore } from '../store/useFeedStore.js';
 import { useToastStore } from '../store/useToastStore.js';
 import { exportBookmarks, importBookmarks, exportBookmarksAsHTML, importBookmarksFromHTML } from '../lib/export.js';
+import Dropdown from './ui/Dropdown.jsx';
 
 export default function ImportExport() {
-  const [showMenu, setShowMenu] = useState(false);
   const { bookmarks, importBookmarksData } = useBookmarkStore();
   const { exportOPML, importOPML } = useFeedStore();
 
-  const handleExportJSON = async () => {
+  const handleExportJSON = async (close) => {
     try {
       await exportBookmarks(bookmarks);
       useToastStore.getState().success('Bookmarks exported as JSON');
     } catch {
       useToastStore.getState().error('Export failed');
     }
-    setShowMenu(false);
+    close();
   };
 
-  const handleExportHTML = async () => {
+  const handleExportHTML = async (close) => {
     try {
       await exportBookmarksAsHTML(bookmarks);
       useToastStore.getState().success('Bookmarks exported as HTML');
     } catch {
       useToastStore.getState().error('Export failed');
     }
-    setShowMenu(false);
+    close();
   };
 
-  const handleImport = async () => {
-    setShowMenu(false);
+  const handleImport = async (close) => {
+    close();
     try {
       const filePath = await open({
         multiple: false,
@@ -56,8 +55,8 @@ export default function ImportExport() {
     }
   };
 
-  const handleImportOPML = async () => {
-    setShowMenu(false);
+  const handleImportOPML = async (close) => {
+    close();
     try {
       const filePath = await open({
         multiple: false,
@@ -72,40 +71,43 @@ export default function ImportExport() {
   };
 
   return (
-    <div className="relative">
-      <button
-        onClick={() => setShowMenu(!showMenu)}
-        className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors duration-150 cursor-pointer"
-        title="Import / Export"
-      >
-        <MoreHorizontal size={14} />
-      </button>
-
-      {showMenu && (
+    <Dropdown
+      align="right"
+      direction="up"
+      trigger={({ ref, toggle, ariaProps }) => (
+        <button
+          ref={ref}
+          onClick={toggle}
+          {...ariaProps}
+          className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors duration-150 cursor-pointer"
+          aria-label="Import / Export"
+        >
+          <MoreHorizontal size={14} aria-hidden="true" />
+        </button>
+      )}
+    >
+      {({ close }) => (
         <>
-          <div className="fixed inset-0 z-30" onClick={() => setShowMenu(false)} />
-          <div className="absolute bottom-full right-0 mb-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg py-1 min-w-[200px] z-40 animate-scaleIn">
-            <div className="px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-400">Bookmarks</div>
-            <button onClick={handleExportJSON} className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer">
-              <Download size={14} /> Export as JSON
-            </button>
-            <button onClick={handleExportHTML} className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer">
-              <Download size={14} /> Export as HTML
-            </button>
-            <button onClick={handleImport} className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer">
-              <Upload size={14} /> Import (JSON/HTML)
-            </button>
-            <div className="border-t border-zinc-100 dark:border-zinc-800 my-1" />
-            <div className="px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-400">Feeds</div>
-            <button onClick={() => { exportOPML(); setShowMenu(false); }} className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer">
-              <Download size={14} /> Export feeds (OPML)
-            </button>
-            <button onClick={handleImportOPML} className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer">
-              <Upload size={14} /> Import feeds (OPML)
-            </button>
-          </div>
+          <Dropdown.Label>Bookmarks</Dropdown.Label>
+          <Dropdown.Item onClick={() => handleExportJSON(close)}>
+            <Download size={14} aria-hidden="true" /> Export as JSON
+          </Dropdown.Item>
+          <Dropdown.Item onClick={() => handleExportHTML(close)}>
+            <Download size={14} aria-hidden="true" /> Export as HTML
+          </Dropdown.Item>
+          <Dropdown.Item onClick={() => handleImport(close)}>
+            <Upload size={14} aria-hidden="true" /> Import (JSON/HTML)
+          </Dropdown.Item>
+          <Dropdown.Divider />
+          <Dropdown.Label>Feeds</Dropdown.Label>
+          <Dropdown.Item onClick={() => { exportOPML(); close(); }}>
+            <Download size={14} aria-hidden="true" /> Export feeds (OPML)
+          </Dropdown.Item>
+          <Dropdown.Item onClick={() => handleImportOPML(close)}>
+            <Upload size={14} aria-hidden="true" /> Import feeds (OPML)
+          </Dropdown.Item>
         </>
       )}
-    </div>
+    </Dropdown>
   );
 }

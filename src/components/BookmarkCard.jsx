@@ -53,18 +53,19 @@ export default function BookmarkCard({ bookmark }) {
         )}
 
         {bookmark.ogImage ? (
-          <div className="h-36 overflow-hidden bg-zinc-50 dark:bg-zinc-800/50">
+          <div className="h-36 overflow-hidden bg-zinc-50 dark:bg-zinc-800/50 relative">
+            <Globe size={24} className="fallback-icon hidden absolute inset-0 m-auto text-zinc-300 dark:text-zinc-600" aria-hidden="true" />
             <img
               src={bookmark.ogImage}
               alt=""
-              className="w-full h-full object-cover"
-              onError={(e) => { e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-zinc-300 dark:text-zinc-600"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></div>'; }}
+              className="w-full h-full object-cover relative"
+              onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.querySelector('.fallback-icon')?.classList.remove('hidden'); }}
             />
           </div>
         ) : (
           <div className="h-36 bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-center">
             {bookmark.favicon ? (
-              <img src={bookmark.favicon} alt="" className="w-8 h-8 opacity-40" onError={(e) => { e.target.replaceWith(Object.assign(document.createElement('span'), { innerHTML: '' })); }} />
+              <img src={bookmark.favicon} alt="" className="w-8 h-8 opacity-40" onError={(e) => { e.target.style.display = 'none'; }} />
             ) : (
               <Globe size={24} className="text-zinc-300 dark:text-zinc-600" />
             )}
@@ -118,26 +119,30 @@ export default function BookmarkCard({ bookmark }) {
             <button
               onClick={(e) => { e.stopPropagation(); toggleFavorite(bookmark.id); }}
               className={`p-1.5 rounded-md bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm hover:bg-white dark:hover:bg-zinc-800 transition-colors duration-150 cursor-pointer ${bookmark.isFavorite ? 'text-yellow-500' : 'text-zinc-400'}`}
+              aria-label={bookmark.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
             >
-              <Star size={13} fill={bookmark.isFavorite ? 'currentColor' : 'none'} />
+              <Star size={13} fill={bookmark.isFavorite ? 'currentColor' : 'none'} aria-hidden="true" />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); toggleArchive(bookmark.id); }}
               className="p-1.5 rounded-md text-zinc-400 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm hover:bg-white dark:hover:bg-zinc-800 hover:text-zinc-600 transition-colors duration-150 cursor-pointer"
+              aria-label={bookmark.isArchived ? 'Unarchive' : 'Archive'}
             >
-              <Archive size={13} />
+              <Archive size={13} aria-hidden="true" />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); shellOpen(bookmark.url); }}
               className="p-1.5 rounded-md text-zinc-400 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm hover:bg-white dark:hover:bg-zinc-800 hover:text-zinc-600 transition-colors duration-150 cursor-pointer"
+              aria-label="Open in browser"
             >
-              <ExternalLink size={13} />
+              <ExternalLink size={13} aria-hidden="true" />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); deleteBookmark(bookmark.id); }}
               className="p-1.5 rounded-md text-zinc-400 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm hover:bg-white dark:hover:bg-zinc-800 hover:text-red-500 transition-colors duration-150 cursor-pointer"
+              aria-label="Delete bookmark"
             >
-              <Trash2 size={13} />
+              <Trash2 size={13} aria-hidden="true" />
             </button>
           </div>
         )}

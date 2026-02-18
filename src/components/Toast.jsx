@@ -19,30 +19,33 @@ export default function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm">
+    <div className="fixed bottom-4 right-4 z-100 flex flex-col gap-2 max-w-sm" role="region" aria-live="polite" aria-label="Notifications">
       {toasts.map((toast) => {
         const Icon = icons[toast.type] || Info;
         return (
           <div
             key={toast.id}
+            role={toast.type === 'error' ? 'alert' : 'status'}
             className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-lg text-sm animate-[slideUp_0.2s_ease-out] ${colors[toast.type] || colors.info}`}
           >
-            <Icon size={16} className="shrink-0" />
+            <Icon size={16} className="shrink-0" aria-hidden="true" />
             <span className="flex-1">{toast.message}</span>
             {toast.undoAction && (
               <button
                 onClick={() => { toast.undoAction(); removeToast(toast.id); }}
                 className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors duration-150 cursor-pointer shrink-0"
+                aria-label="Undo action"
               >
-                <Undo2 size={12} />
+                <Undo2 size={12} aria-hidden="true" />
                 Undo
               </button>
             )}
             <button
               onClick={() => removeToast(toast.id)}
               className="p-0.5 hover:bg-black/5 dark:hover:bg-white/5 rounded transition-colors duration-150 cursor-pointer shrink-0"
+              aria-label="Dismiss notification"
             >
-              <X size={14} />
+              <X size={14} aria-hidden="true" />
             </button>
           </div>
         );

@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import Modal from './ui/Modal.jsx';
 
 const shortcuts = [
   { keys: ['Ctrl', 'K'], description: 'Open command palette' },
@@ -16,35 +16,24 @@ const shortcuts = [
 
 export default function KeyboardShortcuts({ onClose }) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 backdrop-blur-sm animate-fadeIn" onClick={onClose}>
-      <div
-        className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-2xl w-full max-w-md mx-4 p-6 animate-scaleIn"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Keyboard Shortcuts</h2>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-pointer transition-colors duration-150">
-            <X size={16} />
-          </button>
-        </div>
-        <div className="space-y-2">
-          {shortcuts.map((s, i) => (
-            <div key={i} className="flex items-center justify-between py-1">
-              <span className="text-sm text-zinc-600 dark:text-zinc-400">{s.description}</span>
-              <div className="flex items-center gap-1">
-                {s.keys.map((key) => (
-                  <kbd
-                    key={key}
-                    className="text-[11px] text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-1.5 py-0.5 rounded min-w-[24px] text-center"
-                  >
-                    {key}
-                  </kbd>
-                ))}
-              </div>
+    <Modal title="Keyboard Shortcuts" onClose={onClose} zIndex="z-[60]">
+      <div className="space-y-2">
+        {shortcuts.map((s, i) => (
+          <div key={i} className="flex items-center justify-between py-1">
+            <span className="text-sm text-zinc-600 dark:text-zinc-400">{s.description}</span>
+            <div className="flex items-center gap-1">
+              {s.keys.map((key) => (
+                <kbd
+                  key={key}
+                  className="text-[11px] text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-1.5 py-0.5 rounded min-w-[24px] text-center"
+                >
+                  {key}
+                </kbd>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
-    </div>
+    </Modal>
   );
 }

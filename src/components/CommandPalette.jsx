@@ -102,9 +102,11 @@ export default function CommandPalette({ onClose, onAddBookmark, onAddFeed, onAd
   }, []);
 
   useEffect(() => {
-    const el = listRef.current?.children[selectedIndex];
+    const item = filtered[selectedIndex];
+    if (!item) return;
+    const el = document.getElementById(`cmd-${item.id}`);
     if (el) el.scrollIntoView({ block: 'nearest' });
-  }, [selectedIndex]);
+  }, [selectedIndex, filtered]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'ArrowDown') {
@@ -132,16 +134,21 @@ export default function CommandPalette({ onClose, onAddBookmark, onAddFeed, onAd
   let flatIndex = -1;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-center pt-[15vh] bg-black/30 backdrop-blur-sm animate-fadeIn" onClick={onClose}>
+    <div className="fixed inset-0 z-60 flex items-start justify-center pt-[15vh] bg-black/30 backdrop-blur-sm animate-fadeIn" onClick={onClose}>
       <div
         className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-2xl w-full max-w-lg mx-4 overflow-hidden animate-scaleIn"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-200 dark:border-zinc-800">
-          <Search size={16} className="text-zinc-400 shrink-0" />
+          <Search size={16} className="text-zinc-400 shrink-0" aria-hidden="true" />
           <input
             ref={inputRef}
             type="text"
+            role="combobox"
+            aria-expanded="true"
+            aria-controls="command-palette-results"
+            aria-activedescendant={filtered[selectedIndex] ? `cmd-${filtered[selectedIndex].id}` : undefined}
+            aria-label="Search bookmarks, commands, tags"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -150,7 +157,7 @@ export default function CommandPalette({ onClose, onAddBookmark, onAddFeed, onAd
           />
           <kbd className="text-[10px] text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">ESC</kbd>
         </div>
-        <div ref={listRef} className="max-h-80 overflow-y-auto py-1">
+        <div ref={listRef} id="command-palette-results" role="listbox" className="max-h-80 overflow-y-auto py-1">
           {Object.entries(sections).map(([section, cmds]) => (
             <div key={section}>
               <div className="px-4 pt-2 pb-1 text-[10px] font-medium uppercase tracking-wider text-zinc-400">{section}</div>
@@ -161,6 +168,9 @@ export default function CommandPalette({ onClose, onAddBookmark, onAddFeed, onAd
                 return (
                   <button
                     key={cmd.id}
+                    id={`cmd-${cmd.id}`}
+                    role="option"
+                    aria-selected={idx === selectedIndex}
                     onClick={() => cmd.action()}
                     onMouseEnter={() => setSelectedIndex(idx)}
                     className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors duration-75 cursor-pointer ${
@@ -169,7 +179,7 @@ export default function CommandPalette({ onClose, onAddBookmark, onAddFeed, onAd
                         : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800'
                     }`}
                   >
-                    <Icon size={14} className="shrink-0" />
+                    <Icon size={14} className="shrink-0" aria-hidden="true" />
                     <span className="text-sm truncate flex-1">{cmd.label}</span>
                     {cmd.meta && <span className="text-xs text-zinc-400 dark:text-zinc-500 shrink-0">{cmd.meta}</span>}
                   </button>

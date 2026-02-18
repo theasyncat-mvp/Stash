@@ -58,14 +58,20 @@ export default function BookmarkDetail() {
   return (
     <>
       <div className="fixed inset-0 z-30 bg-black/20 animate-fadeIn" onClick={() => setSelectedBookmark(null)} />
-      <div className="fixed right-0 top-0 bottom-0 z-40 w-[420px] max-w-full bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 overflow-y-auto shadow-xl animate-slideInRight">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="bookmark-detail-title"
+        className="fixed right-0 top-0 bottom-0 z-40 w-420px max-w-full bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 overflow-y-auto shadow-xl animate-slideInRight"
+      >
         <div className="sticky top-0 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 px-4 py-3 flex items-center justify-between z-10">
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate">Details</h2>
+          <h2 id="bookmark-detail-title" className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate">Details</h2>
           <button
             onClick={() => setSelectedBookmark(null)}
             className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-pointer transition-colors duration-150"
+            aria-label="Close details panel"
           >
-            <X size={16} />
+            <X size={16} aria-hidden="true" />
           </button>
         </div>
 

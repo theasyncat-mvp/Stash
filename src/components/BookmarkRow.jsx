@@ -46,6 +46,7 @@ export default function BookmarkRow({ bookmark }) {
             checked={isSelected}
             onChange={() => toggleSelected(bookmark.id)}
             className="checkbox-custom shrink-0"
+            aria-label={`Select ${bookmark.title || bookmark.url}`}
             onClick={(e) => e.stopPropagation()}
           />
         )}
@@ -73,7 +74,7 @@ export default function BookmarkRow({ bookmark }) {
 
         <span className="text-xs text-zinc-400 dark:text-zinc-500 w-32 truncate hidden sm:block">{domain}</span>
 
-        <div className="flex items-center gap-1 hidden md:flex">
+        <div className="hidden items-center gap-1 md:flex">
           {bookmark.tags?.slice(0, 2).map((tag) => (
             <span key={tag} className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs px-2 py-0.5 rounded-full">{tag}</span>
           ))}
@@ -83,7 +84,7 @@ export default function BookmarkRow({ bookmark }) {
         </div>
 
         {bookmark.readingTime > 0 && (
-          <span className="flex items-center gap-0.5 text-[10px] text-zinc-300 dark:text-zinc-600 shrink-0 hidden lg:flex">
+          <span className="hidden items-center gap-0.5 text-[10px] text-zinc-300 dark:text-zinc-600 shrink-0 lg:flex">
             <Clock size={9} />{bookmark.readingTime}m
           </span>
         )}
@@ -95,26 +96,30 @@ export default function BookmarkRow({ bookmark }) {
             <button
               onClick={(e) => { e.stopPropagation(); toggleFavorite(bookmark.id); }}
               className={`p-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-150 cursor-pointer ${bookmark.isFavorite ? 'text-yellow-500' : 'text-zinc-400'}`}
+              aria-label={bookmark.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
             >
-              <Star size={14} fill={bookmark.isFavorite ? 'currentColor' : 'none'} />
+              <Star size={14} fill={bookmark.isFavorite ? 'currentColor' : 'none'} aria-hidden="true" />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); toggleArchive(bookmark.id); }}
               className="p-1 rounded-md text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-600 transition-colors duration-150 cursor-pointer"
+              aria-label={bookmark.isArchived ? 'Unarchive' : 'Archive'}
             >
-              <Archive size={14} />
+              <Archive size={14} aria-hidden="true" />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); shellOpen(bookmark.url); }}
               className="p-1 rounded-md text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-600 transition-colors duration-150 cursor-pointer"
+              aria-label="Open in browser"
             >
-              <ExternalLink size={14} />
+              <ExternalLink size={14} aria-hidden="true" />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); deleteBookmark(bookmark.id); }}
               className="p-1 rounded-md text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-red-500 transition-colors duration-150 cursor-pointer"
+              aria-label="Delete bookmark"
             >
-              <Trash2 size={14} />
+              <Trash2 size={14} aria-hidden="true" />
             </button>
           </div>
         )}

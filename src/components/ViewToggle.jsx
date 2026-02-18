@@ -5,7 +5,7 @@ export default function ViewToggle() {
   const { viewMode, setViewMode } = useBookmarkStore();
 
   return (
-    <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg p-0.5">
+    <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg p-0.5" role="group" aria-label="View mode">
       <button
         onClick={() => setViewMode('grid')}
         className={`p-1.5 rounded-md transition-colors duration-150 cursor-pointer ${
@@ -13,9 +13,10 @@ export default function ViewToggle() {
             ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-zinc-50'
             : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
         }`}
-        title="Grid view"
+        aria-label="Grid view"
+        aria-pressed={viewMode === 'grid'}
       >
-        <Grid3X3 size={14} />
+        <Grid3X3 size={14} aria-hidden="true" />
       </button>
       <button
         onClick={() => setViewMode('list')}
@@ -24,9 +25,10 @@ export default function ViewToggle() {
             ? 'bg-white dark:bg-zinc-700 shadow-sm text-zinc-900 dark:text-zinc-50'
             : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300'
         }`}
-        title="List view"
+        aria-label="List view"
+        aria-pressed={viewMode === 'list'}
       >
-        <List size={14} />
+        <List size={14} aria-hidden="true" />
       </button>
     </div>
   );
