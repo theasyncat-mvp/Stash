@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Search, Inbox, Bookmark, Star, Archive, Tag, Rss, FolderOpen,
-  Plus, Sun, Moon, Grid3X3, List, Download, Upload,
+  Plus, Sun, Moon, Grid3X3, List, Download, Upload, Copy,
 } from 'lucide-react';
 import { useBookmarkStore, useAllTags } from '../store/useBookmarkStore.js';
 import { useFeedStore } from '../store/useFeedStore.js';
 import { fuzzySearch } from '../lib/search.js';
 
-export default function CommandPalette({ onClose, onAddBookmark, onAddFeed, onAddCollection }) {
+export default function CommandPalette({ onClose, onAddBookmark, onAddFeed, onAddCollection, onFindDuplicates }) {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef(null);
@@ -26,6 +26,7 @@ export default function CommandPalette({ onClose, onAddBookmark, onAddFeed, onAd
       { id: 'add-bookmark', label: 'Add Bookmark', icon: Plus, section: 'Actions', action: () => { onClose(); setTimeout(onAddBookmark, 100); } },
       { id: 'add-feed', label: 'Subscribe to Feed', icon: Rss, section: 'Actions', action: () => { onClose(); setTimeout(onAddFeed, 100); } },
       { id: 'add-collection', label: 'New Collection', icon: FolderOpen, section: 'Actions', action: () => { onClose(); setTimeout(onAddCollection, 100); } },
+      { id: 'find-duplicates', label: 'Find Duplicate Bookmarks', icon: Copy, section: 'Actions', action: () => { onClose(); setTimeout(onFindDuplicates, 100); } },
       { id: 'view-grid', label: 'Switch to Grid View', icon: Grid3X3, section: 'View', action: () => { setViewMode('grid'); onClose(); } },
       { id: 'view-list', label: 'Switch to List View', icon: List, section: 'View', action: () => { setViewMode('list'); onClose(); } },
     ];

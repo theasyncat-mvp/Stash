@@ -530,6 +530,70 @@ export const useBookmarkStore = create((set, get) => ({
     await saveBookmarks(bookmarks);
   },
 
+  // Deduplication
+  findDuplicates: () => {
+    const { bookmarks } = get();
+    const groups = {};
+    bookmarks.forEach((b) => {
+      const key = normalizeUrl(b.url);
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(b);
+    });
+    return Object.values(groups)
+      .filter((g) => g.length > 1)
+      .sort((a, b) => b.length - a.length);
+  },
+
+  mergeDuplicates: async (keepId, removeIds) => {
+    const allBookmarks = get().bookmarks;
+    const keep = allBookmarks.find((b) => b.id === keepId);
+    if (!keep) return;
+    const toRemove = allBookmarks.filter((b) => removeIds.includes(b.id));
+    if (toRemove.length === 0) return;
+
+    // Merge: union tags, prefer first non-empty notes, keep isFavorite if any, keep earliest createdAt
+    const mergedTags = [...new Set([...keep.tags, ...toRemove.flatMap((b) => b.tags || [])])];
+    const mergedNotes = keep.notes || toRemove.find((b) => b.notes)?.notes || '';
+    const mergedFavorite = keep.isFavorite || toRemove.some((b) => b.isFavorite);
+    const mergedDescription = keep.description || toRemove.find((b) => b.description)?.description || '';
+    const mergedReadable = keep.readableContent || toRemove.find((b) => b.readableContent)?.readableContent || null;
+    const mergedCreated = Math.min(keep.createdAt, ...toRemove.map((b) => b.createdAt));
+    const mergedCollectionId = keep.collectionId || toRemove.find((b) => b.collectionId)?.collectionId || null;
+
+    const removeSet = new Set(removeIds);
+    const bookmarks = allBookmarks
+      .filter((b) => !removeSet.has(b.id))
+      .map((b) =>
+        b.id === keepId
+          ? {
+              ...b,
+              tags: mergedTags,
+              notes: mergedNotes,
+              isFavorite: mergedFavorite,
+              description: mergedDescription,
+              readableContent: mergedReadable,
+              createdAt: mergedCreated,
+              collectionId: mergedCollectionId,
+              updatedAt: Date.now(),
+            }
+          : b
+      );
+
+    set({ bookmarks });
+    await saveBookmarks(bookmarks);
+    useToastStore.getState().success(`Merged ${toRemove.length + 1} duplicates into one`, {
+      undoAction: async () => {
+        // Restore all the originals (including the removed ones)
+        const originals = [keep, ...toRemove];
+        const remaining = get().bookmarks.filter((b) => b.id !== keepId);
+        const restored = [...originals, ...remaining];
+        set({ bookmarks: restored });
+        await saveBookmarks(restored);
+        useToastStore.getState().success('Merge undone');
+      },
+    });
+  },
+
   // Computed
   getFilteredBookmarks: () => {
     const { bookmarks, activeView, searchQuery, sortBy } = get();

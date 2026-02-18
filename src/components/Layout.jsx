@@ -13,6 +13,7 @@ import AddFeed from './AddFeed.jsx';
 import AddCollection from './AddCollection.jsx';
 import CommandPalette from './CommandPalette.jsx';
 import KeyboardShortcuts from './KeyboardShortcuts.jsx';
+import DuplicateScanner from './DuplicateScanner.jsx';
 import ToastContainer from './Toast.jsx';
 import DndProvider from './DndProvider.jsx';
 
@@ -28,6 +29,7 @@ export default function Layout() {
   const [showAddCollection, setShowAddCollection] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showDuplicateScanner, setShowDuplicateScanner] = useState(false);
 
   const bookmarkCount = filteredBookmarks.length;
 
@@ -57,6 +59,7 @@ export default function Layout() {
       if (showAddBookmark) { setShowAddBookmark(false); return; }
       if (showAddFeed) { setShowAddFeed(false); return; }
       if (showAddCollection) { setShowAddCollection(false); return; }
+      if (showDuplicateScanner) { setShowDuplicateScanner(false); return; }
       if (selectedBookmarkId) { setSelectedBookmark(null); return; }
       if (bulkMode) { toggleBulkMode(); return; }
     }
@@ -70,7 +73,7 @@ export default function Layout() {
     if (e.key === '4') { setActiveView('archive'); return; }
     if (e.key.toLowerCase() === 'g') { setViewMode('grid'); return; }
     if (e.key.toLowerCase() === 'l') { setViewMode('list'); return; }
-  }, [showCommandPalette, showShortcuts, showAddBookmark, showAddFeed, showAddCollection, selectedBookmarkId, bulkMode, setActiveView, setSelectedBookmark, toggleBulkMode, setViewMode]);
+  }, [showCommandPalette, showShortcuts, showAddBookmark, showAddFeed, showAddCollection, showDuplicateScanner, selectedBookmarkId, bulkMode, setActiveView, setSelectedBookmark, toggleBulkMode, setViewMode]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -176,9 +179,11 @@ export default function Layout() {
           onAddBookmark={() => setShowAddBookmark(true)}
           onAddFeed={() => setShowAddFeed(true)}
           onAddCollection={() => setShowAddCollection(true)}
+          onFindDuplicates={() => setShowDuplicateScanner(true)}
         />
       )}
       {showShortcuts && <KeyboardShortcuts onClose={() => setShowShortcuts(false)} />}
+      {showDuplicateScanner && <DuplicateScanner onClose={() => setShowDuplicateScanner(false)} />}
 
       <ToastContainer />
     </div>
