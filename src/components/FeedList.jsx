@@ -201,7 +201,7 @@ export default function FeedList({ onAddFeed }) {
               <Settings size={12} />
             </button>
             {showSettings && (
-              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg py-1 min-w-160px z-20 animate-scaleIn">
+              <div className="absolute left-1/2 -translate-x-2/3 top-full mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg py-1 w-48 z-20 animate-scaleIn">
                 <div className="px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-zinc-400">Auto-refresh</div>
                 {refreshOptions.map((opt) => (
                   <button
