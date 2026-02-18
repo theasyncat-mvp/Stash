@@ -1,9 +1,7 @@
-const PROXY = 'https://api.allorigins.win/raw?url=';
+import { fetchUrl } from './http.js';
 
 export async function fetchAndParseRSS(rssUrl) {
-  const res = await fetch(`${PROXY}${encodeURIComponent(rssUrl)}`);
-  if (!res.ok) throw new Error('Failed to fetch feed');
-  const text = await res.text();
+  const text = await fetchUrl(rssUrl);
   const doc = new DOMParser().parseFromString(text, 'application/xml');
 
   const parseError = doc.querySelector('parsererror');

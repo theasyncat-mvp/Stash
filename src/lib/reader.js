@@ -1,6 +1,5 @@
 import DOMPurify from 'dompurify';
-
-const PROXY = 'https://api.allorigins.win/raw?url=';
+import { fetchUrl } from './http.js';
 
 const REMOVE_SELECTORS = [
   'script', 'style', 'nav', 'header', 'footer', 'aside', 'iframe', 'form',
@@ -11,9 +10,7 @@ const REMOVE_SELECTORS = [
 
 export async function fetchReadableContent(url) {
   try {
-    const res = await fetch(`${PROXY}${encodeURIComponent(url)}`);
-    if (!res.ok) throw new Error('Fetch failed');
-    const html = await res.text();
+    const html = await fetchUrl(url);
     return extractReadableContent(html);
   } catch {
     return null;

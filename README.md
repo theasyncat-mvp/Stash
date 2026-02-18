@@ -188,11 +188,9 @@ src/
 
 ## Data & Privacy
 
-All data lives in your browser's IndexedDB. **Nothing is sent to any server.** The only external requests are:
+All data lives locally on your machine via Tauri's plugin-store. **Nothing is sent to any server.**
 
-1. **CORS proxy** ([allorigins.win](https://allorigins.win/)) — used to fetch page metadata and RSS feeds, since browsers block cross-origin requests. Only the URL you're saving/subscribing to is sent. You can self-host a proxy by replacing the `PROXY` constant in `src/lib/metadata.js`, `src/lib/rss.js`, and `src/lib/reader.js`.
-
-2. **Google Fonts** — Inter font loaded from Google Fonts CDN.
+HTTP requests (metadata fetching, RSS feeds, reader mode) are made **directly from the Rust backend** using `reqwest` — no third-party CORS proxies, no data leaks. The only outbound requests are to the URLs you explicitly bookmark or subscribe to.
 
 **To back up your data:** Use the export feature in the sidebar (JSON, HTML, or OPML).
 

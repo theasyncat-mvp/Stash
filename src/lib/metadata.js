@@ -1,10 +1,8 @@
-const PROXY = 'https://api.allorigins.win/raw?url=';
+import { fetchUrl } from './http.js';
 
 export async function fetchMetadata(url) {
   try {
-    const res = await fetch(`${PROXY}${encodeURIComponent(url)}`);
-    if (!res.ok) throw new Error('Fetch failed');
-    const html = await res.text();
+    const html = await fetchUrl(url);
     const doc = new DOMParser().parseFromString(html, 'text/html');
 
     const getMeta = (property) => {
