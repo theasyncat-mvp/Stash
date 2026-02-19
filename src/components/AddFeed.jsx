@@ -53,7 +53,7 @@ export default function AddFeed({ onClose }) {
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white rounded-lg transition-colors duration-150 cursor-pointer flex items-center gap-1.5"
+            className="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-black font-bold rounded-lg transition-colors duration-150 cursor-pointer flex items-center gap-1.5"
           >
             <Rss size={14} />
             {loading ? 'Subscribing...' : 'Subscribe'}

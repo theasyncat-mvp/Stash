@@ -122,7 +122,7 @@ export default function FeedList({ onAddFeed }) {
             <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" title="Feed has errors" />
           )}
           {unread > 0 && (
-            <span className="text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded-full min-w-20px text-center font-medium">
+            <span className="text-xs bg-blue-500 text-black px-1.5 py-0.5 rounded-full min-w-20px text-center font-bold">
               {unread}
             </span>
           )}

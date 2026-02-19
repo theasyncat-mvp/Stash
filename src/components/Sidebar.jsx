@@ -173,7 +173,7 @@ function DroppableNavItem({ item, isActive, inboxCount, onNav }) {
       <Icon size={16} />
       <span className="text-sm flex-1">{item.label}</span>
       {item.id === 'inbox' && inboxCount > 0 && (
-        <span className="text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded-full min-w-20px text-center font-medium">
+        <span className="text-xs bg-blue-500 text-black px-1.5 py-0.5 rounded-full min-w-20px text-center font-bold">
           {inboxCount}
         </span>
       )}
