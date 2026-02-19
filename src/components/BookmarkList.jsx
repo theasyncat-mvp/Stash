@@ -26,8 +26,8 @@ export default function BookmarkList() {
   const getColumns = () => {
     if (!parentRef.current) return 3;
     const w = parentRef.current.offsetWidth;
-    if (w < 640) return 1;
-    if (w < 1024) return 2;
+    if (w < 480) return 1;
+    if (w < 640) return 2;
     return 3;
   };
 
@@ -208,7 +208,6 @@ function VirtualGrid({ bookmarks, parentRef, getColumns, focusedIndex, setFocuse
             return (
               <div
                 key={vRow.index}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
                 role="listitem"
                 style={{
                   position: 'absolute',
@@ -216,6 +215,9 @@ function VirtualGrid({ bookmarks, parentRef, getColumns, focusedIndex, setFocuse
                   left: 0,
                   width: '100%',
                   transform: `translateY(${vRow.start}px)`,
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                  gap: '1rem',
                 }}
               >
                 {rowBookmarks.map((bm, i) => (

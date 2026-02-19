@@ -3,7 +3,6 @@ import { listen } from '@tauri-apps/api/event';
 import { useBookmarkStore } from './store/useBookmarkStore.js';
 import { useFeedStore } from './store/useFeedStore.js';
 import { useThemeStore } from './store/useThemeStore.js';
-import { useToastStore } from './store/useToastStore.js';
 import Layout from './components/Layout.jsx';
 import TitleBar from './components/TitleBar.jsx';
 import ConfirmDialog from './components/ConfirmDialog.jsx';
