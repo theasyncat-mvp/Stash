@@ -13,6 +13,8 @@
     "store:default",
     "dialog:default",
     "fs:default",
+    "fs:allow-write-text-file",
+    "fs:allow-read-text-file",
     "shell:default"
   ]
 }

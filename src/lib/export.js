@@ -1,9 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
-import { save, open } from '@tauri-apps/plugin-dialog';
-import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
+import { save } from '@tauri-apps/plugin-dialog';
+import { writeTextFile } from '@tauri-apps/plugin-fs';
 
 export async function exportBookmarks(bookmarks) {
-  const clean = bookmarks.map(({ _loading, ...b }) => b);
+  const clean = bookmarks
+    .filter((b) => b.source !== 'feed')
+    .map(({ _loading, ...b }) => b);
   const data = JSON.stringify(clean, null, 2);
   const date = new Date().toISOString().slice(0, 10);
   const filePath = await save({
@@ -40,6 +42,7 @@ export function importBookmarks(jsonString, existingBookmarks) {
 }
 
 export async function exportBookmarksAsHTML(bookmarks) {
+  bookmarks = bookmarks.filter((b) => b.source !== 'feed');
   const lines = ['<!DOCTYPE NETSCAPE-Bookmark-file-1>', '<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">', '<TITLE>Stash Bookmarks</TITLE>', '<H1>Stash Bookmarks</H1>', '<DL><p>'];
 
   const tagGroups = {};
