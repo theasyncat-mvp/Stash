@@ -42,7 +42,7 @@ body {
 }
 
 .logo svg {
-  color: #3b82f6;
+  color: #3dca7a;
 }
 
 /* ── Form body ── */
@@ -82,7 +82,7 @@ body {
   color: #18181b;
   line-height: 1.35;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -132,8 +132,8 @@ body {
 }
 
 .tags-container:focus-within {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  border-color: #3dca7a;
+  box-shadow: 0 0 0 2px rgba(61, 202, 122, 0.1);
 }
 
 .tags-list {
@@ -144,8 +144,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  background: #eff6ff;
-  color: #2563eb;
+  background: #f0fdf6;
+  color: #28a85f;
   font-size: 11px;
   font-weight: 500;
   padding: 2px 6px 2px 8px;
@@ -162,7 +162,7 @@ body {
   border-radius: 99px;
   border: none;
   background: transparent;
-  color: #93c5fd;
+  color: #86efb4;
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
@@ -171,8 +171,8 @@ body {
 }
 
 .tag-chip-remove:hover {
-  background: #bfdbfe;
-  color: #1d4ed8;
+  background: #bbf7d3;
+  color: #1d854a;
 }
 
 .tag-input {
@@ -213,16 +213,17 @@ body {
 
 .btn-primary {
   flex: 1;
-  background: #3b82f6;
-  color: white;
+  background: #3dca7a;
+  color: black;
+  font-weight: bold;
 }
 
 .btn-primary:hover {
-  background: #2563eb;
+  background: #28a85f;
 }
 
 .btn-primary:active {
-  background: #1d4ed8;
+  background: #1d854a;
   transform: scale(0.98);
 }
 
@@ -259,7 +260,7 @@ body {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: #ecfdf5;
+  background: #000000;
   color: #10b981;
   display: flex;
   align-items: center;
