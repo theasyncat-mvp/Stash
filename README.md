@@ -5,76 +5,83 @@
 <h1 align="center">Stash</h1>
 
 <p align="center">
-  A clean, local-only bookmark manager + read-later + RSS reader.<br/>
-  No cloud, no accounts — your data stays in your browser.
+  A clean, local-first desktop app for bookmarks, read-later, and RSS.<br/>
+  No cloud, no accounts — your data never leaves your machine.
 </p>
 
 <p align="center">
-  <strong>Bookmarks</strong> &middot; <strong>Read Later</strong> &middot; <strong>RSS Reader</strong> &middot; <strong>Reader Mode</strong>
+  <strong>Bookmarks</strong> &middot; <strong>Read Later</strong> &middot; <strong>RSS Reader</strong> &middot; <strong>Reader Mode</strong> &middot; <strong>Browser Extension</strong>
 </p>
 
 ---
 
 ## Why Stash?
 
-Raindrop.io is paid. Pocket is dead. Feedly wants your money. Stash gives you all three — **bookmarks, read-later, and RSS** — in one free, open-source, local-first app that runs entirely in your browser.
+Raindrop.io is paid. Pocket is dead. Feedly wants your money. Stash gives you all three — **bookmarks, read-later, and RSS** — in one free, open-source, local-first **desktop app** that runs entirely on your machine.
 
-**Zero data leaves your machine.** Everything is stored in IndexedDB.
+**Zero data leaves your machine.** Everything is stored locally via Tauri's plugin-store. HTTP requests (metadata, RSS, reader mode) go directly from the Rust backend — no CORS proxies, no third parties.
 
 ## Features
 
 ### Bookmarks
-- Save any URL — metadata (title, description, favicon, og:image) fetched automatically
-- Tag bookmarks for organization
+- Save any URL — title, description, favicon, og:image fetched automatically from Rust
+- Tag bookmarks for organization with autocomplete
 - Create collections (folders) to group bookmarks
 - Favorite, archive, and mark as read
 - Grid and list views with sorting
 - Personal notes on each bookmark
 - Estimated reading time
-- Duplicate URL detection
+- Duplicate URL detection & scanner
+- Drag & drop reordering and between collections/tags
+- Bulk actions: delete, archive, tag, move (multi-select with `Ctrl+B`)
+- Full undo support for destructive actions
 
 ### RSS Reader
 - Subscribe to any RSS 2.0 or Atom feed
-- Articles imported as bookmarks automatically
-- Unread count badges in sidebar
-- Configurable auto-refresh (15min / 30min / 1hr / 6hr)
-- OPML import/export for feed subscriptions
+- Articles imported as bookmarks automatically, with images extracted from `media:content`, `media:thumbnail`, enclosures, or inline HTML
+- Feed categories with collapsible groups in sidebar
+- Unread count badges
+- Configurable auto-refresh (manual / 15min / 30min / 1hr / 6hr)
+- OPML import/export with category support
 - Error tracking for broken feeds
 
 ### Reader Mode
-- Clean, distraction-free article view
-- Serif typography optimized for long-form reading
-- Strips navigation, ads, sidebars, and clutter
+- Clean, distraction-free article view with full typography
+- Reading progress bar and estimated read time
+- Hero image, favicon, domain, and article metadata in header
+- Auto mark-as-read after 3 seconds
+- Scroll-to-top button
 - Content cached for offline re-reading
+- Configurable font size, font family, and line width (persisted)
+
+### Browser Extension
+- Companion Chrome/Firefox extension for one-click save-to-Stash
+- Stash runs a local HTTP server (port 21890) — extension POSTs directly to it
+- Shows page preview (favicon, title, URL) with tag input before saving
+- Offline detection — shows banner if Stash isn't running
+- Manifest V3, no external permissions
 
 ### Search & Sort
-- Full-text search across titles, descriptions, URLs, and tags
-- Sort by: newest, oldest, title A-Z/Z-A, domain
+- Fuzzy full-text search (Fuse.js) across titles, descriptions, URLs, and tags
+- Sort by: newest, oldest, title A–Z/Z–A, domain
 - Filter by: inbox, all, favorites, archive, tag, collection, feed
 
-### Bulk Actions
-- Multi-select with checkboxes (`Ctrl+B`)
-- Bulk delete, archive, tag, or move to collection
-- Select all / deselect all
-- Undo support for destructive actions
-
 ### Import & Export
-- **Export** bookmarks as JSON or HTML (Netscape Bookmark format)
-- **Import** from JSON or browser bookmark exports (Chrome, Firefox, Safari, Edge)
-- **OPML** import/export for RSS feed subscriptions
+- Export bookmarks as JSON or HTML (Netscape Bookmark format)
+- Import from JSON or browser bookmark exports (Chrome, Firefox, Safari, Edge)
+- OPML import/export for RSS feed subscriptions
 
 ### Command Palette
 - `Ctrl+K` opens a Spotlight-style command palette
 - Search bookmarks, navigate views, run actions instantly
 
-### Dark Mode
-- Light / Dark / System theme
-- Persisted across sessions
-
-### PWA Ready
-- Installable as a standalone desktop/mobile app
-- Custom SVG favicon
-- Fully responsive — mobile, tablet, and desktop
+### UI & UX
+- Custom frameless title bar with native window controls (minimize, maximize, close)
+- Light / Dark / System theme, persisted across sessions
+- Right-click context menus on bookmarks and feeds
+- Keyboard shortcut reference accessible from sidebar
+- Toast notifications with undo
+- Custom confirmation dialogs
 
 ## Keyboard Shortcuts
 
@@ -89,123 +96,121 @@ Raindrop.io is paid. Pocket is dead. Feedly wants your money. Stash gives you al
 | `4` | Archive |
 | `G` | Grid view |
 | `L` | List view |
+| `↓ / J` | Next bookmark |
+| `↑ / K` | Previous bookmark |
+| `Enter` | Open focused bookmark |
+| `O` | Open in browser |
 | `Esc` | Close panel / modal |
 | `?` | Keyboard shortcuts help |
 
 ## Tech Stack
 
-| | |
+| Layer | Technology |
 |---|---|
-| **Framework** | React 19 |
+| **Desktop shell** | Tauri v2 |
+| **Backend** | Rust (reqwest, axum, tokio) |
+| **Frontend** | React 19 |
 | **Build** | Vite 7 |
-| **Styling** | Tailwind CSS 4 |
+| **Styling** | Tailwind CSS v4 |
 | **State** | Zustand |
-| **Storage** | IndexedDB (idb-keyval) |
+| **Storage** | Tauri plugin-store (JSON) |
+| **Search** | Fuse.js |
+| **Drag & drop** | @dnd-kit |
 | **Icons** | Lucide React |
 | **Sanitization** | DOMPurify |
-| **Font** | Inter |
-
-No TypeScript. No component libraries. No backend.
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
+- [Node.js](https://nodejs.org/) 18+
+- [Rust](https://rustup.rs/) (stable toolchain)
+- [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your OS (WebView2 on Windows, etc.)
 
-### Install & Run
+### Install & Run (Development)
 
 ```bash
 git clone https://github.com/asyncat/stash.git
 cd stash
 npm install
-npm run dev
+npx tauri dev
 ```
-
-Open [http://localhost:5173](http://localhost:5173).
 
 ### Build for Production
 
 ```bash
-npm run build
-npm run preview
+npx tauri build
 ```
 
-### Deploy
+The installer is output to `src-tauri/target/release/bundle/`.
 
-Stash is a static site — deploy anywhere:
+### Browser Extension (optional)
 
-- **Vercel** / **Netlify** / **Cloudflare Pages** — connect the repo or drop the `dist/` folder
-- **GitHub Pages** — push `dist/` to `gh-pages`
-- **Any static host** — upload `dist/`
+1. Open `chrome://extensions` (Chrome) or `about:debugging` (Firefox)
+2. Enable **Developer mode**
+3. Click **Load unpacked** → select the `browser-extension/` folder
+4. Launch Stash, then click the extension icon on any page to save
 
 ## Project Structure
 
 ```
-src/
-├── main.jsx                    Entry point
-├── index.css                   Tailwind + global styles
-├── App.jsx                     Root component
-├── store/
-│   ├── useBookmarkStore.js     Bookmarks, collections, bulk actions, sorting
-│   ├── useFeedStore.js         RSS feeds, auto-refresh, OPML
-│   ├── useThemeStore.js        Theme (light/dark/system)
-│   └── useToastStore.js        Toast notifications
-├── lib/
-│   ├── storage.js              IndexedDB persistence
-│   ├── metadata.js             URL metadata extraction via CORS proxy
-│   ├── rss.js                  RSS/Atom parsing
-│   ├── reader.js               Article content extraction
-│   ├── search.js               Full-text search
-│   ├── export.js               JSON/HTML/bookmark import & export
-│   └── timeAgo.js              Relative timestamps
-└── components/
-    ├── Layout.jsx              Main layout + keyboard shortcuts
-    ├── Sidebar.jsx             Navigation sidebar
-    ├── SearchBar.jsx           Search input
-    ├── BookmarkCard.jsx        Grid card
-    ├── BookmarkRow.jsx         List row
-    ├── BookmarkList.jsx        View renderer
-    ├── BookmarkDetail.jsx      Detail panel (notes, tags, actions)
-    ├── ReaderView.jsx          Reader mode
-    ├── CommandPalette.jsx      Ctrl+K command palette
-    ├── BulkActionBar.jsx       Bulk selection toolbar
-    ├── SortDropdown.jsx        Sort menu
-    ├── AddBookmark.jsx         Add bookmark modal
-    ├── AddFeed.jsx             Subscribe to feed modal
-    ├── AddCollection.jsx       New collection modal
-    ├── TagManager.jsx          Tag editor
-    ├── FeedList.jsx            Feed sidebar + auto-refresh settings
-    ├── CollectionList.jsx      Collections sidebar
-    ├── ContextMenu.jsx         Right-click menu
-    ├── ViewToggle.jsx          Grid/list switch
-    ├── ThemeToggle.jsx         Theme switch
-    ├── ImportExport.jsx        Import/export menu
-    ├── KeyboardShortcuts.jsx   Shortcuts help
-    ├── EmptyState.jsx          Empty views
-    └── Toast.jsx               Toast notifications
+stash/
+├── src/                        Frontend (React)
+│   ├── main.jsx
+│   ├── index.css               Tailwind + global typography
+│   ├── App.jsx                 Root component + extension event listener
+│   ├── store/
+│   │   ├── useBookmarkStore.js Bookmarks, collections, bulk, undo
+│   │   ├── useFeedStore.js     RSS feeds, categories, auto-refresh
+│   │   ├── useThemeStore.js    Theme (light / dark / system)
+│   │   └── useToastStore.js    Toasts
+│   ├── lib/
+│   │   ├── storage.js          Tauri plugin-store persistence
+│   │   ├── metadata.js         URL metadata extraction
+│   │   ├── rss.js              RSS 2.0 / Atom parser
+│   │   ├── reader.js           Article extraction + sanitization
+│   │   ├── search.js           Fuse.js search
+│   │   ├── export.js           JSON / HTML / OPML import & export
+│   │   └── timeAgo.js          Relative timestamps
+│   └── components/
+│       ├── TitleBar.jsx        Custom frameless title bar
+│       ├── Layout.jsx          Main layout + keyboard shortcuts
+│       ├── Sidebar.jsx         Navigation sidebar
+│       ├── BookmarkCard.jsx    Grid card
+│       ├── BookmarkRow.jsx     List row
+│       ├── BookmarkList.jsx    Virtualised list/grid
+│       ├── BookmarkDetail.jsx  Detail panel
+│       ├── ReaderView.jsx      Reader mode
+│       ├── FeedList.jsx        Feed sidebar with categories
+│       ├── CollectionList.jsx  Collections sidebar
+│       ├── CommandPalette.jsx  Ctrl+K palette
+│       ├── BulkActionBar.jsx   Bulk selection toolbar
+│       └── ...                 Modals, toasts, context menus
+├── src-tauri/                  Rust backend
+│   ├── src/
+│   │   ├── main.rs
+│   │   └── lib.rs              Commands, extension HTTP server, tray
+│   ├── Cargo.toml
+│   ├── tauri.conf.json
+│   └── capabilities/
+│       └── default.json        Tauri permission grants
+└── browser-extension/          Companion browser extension
+    ├── manifest.json           MV3
+    ├── popup.html / .css / .js
+    └── icons/
 ```
 
 ## Data & Privacy
 
-All data lives locally on your machine via Tauri's plugin-store. **Nothing is sent to any server.**
+All data is stored in a single JSON file on your machine via Tauri's plugin-store (`stash-data.json` in your OS app data directory). **Nothing is sent to any external server.**
 
-HTTP requests (metadata fetching, RSS feeds, reader mode) are made **directly from the Rust backend** using `reqwest` — no third-party CORS proxies, no data leaks. The only outbound requests are to the URLs you explicitly bookmark or subscribe to.
+Outbound HTTP requests (metadata fetching, RSS, reader mode) originate **directly from the Rust process** using `reqwest` — not from the WebView — so there is no CORS exposure.
 
-**To back up your data:** Use the export feature in the sidebar (JSON, HTML, or OPML).
-
-## Browser Support
-
-- Chrome / Edge 90+
-- Firefox 90+
-- Safari 15+
+**To back up your data:** Use the export feature (JSON, HTML, or OPML).
 
 ## Contributing
 
-1. Fork the repo
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Make changes and verify: `npm run build`
-4. Open a Pull Request
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
