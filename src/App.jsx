@@ -36,8 +36,8 @@ export default function App() {
           await update.downloadAndInstall();
           await relaunch();
         }
-      } catch {
-        // silently ignore — don't interrupt the user if the check fails
+      } catch (e) {
+        console.error('[updater] check failed:', e);
       }
     };
     checkForUpdates();
