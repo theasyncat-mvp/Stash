@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Star, Archive, Trash2, ExternalLink, Eye, BookmarkCheck, Copy, Clock } from 'lucide-react';
+import { X, Star, Archive, Trash2, ExternalLink, Eye, BookmarkCheck, Copy, Clock, ChevronDown, Check } from 'lucide-react';
 import { open as shellOpen } from '@tauri-apps/plugin-shell';
 import { useBookmarkStore } from '../store/useBookmarkStore.js';
 import { useToastStore } from '../store/useToastStore.js';
@@ -16,7 +16,9 @@ export default function BookmarkDetail() {
 
   const [showReader, setShowReader] = useState(false);
   const [notes, setNotes] = useState('');
+  const [collectionOpen, setCollectionOpen] = useState(false);
   const notesTimeout = useRef(null);
+  const collectionRef = useRef(null);
 
   const bookmark = bookmarks.find((b) => b.id === selectedBookmarkId);
 
@@ -28,7 +30,24 @@ export default function BookmarkDetail() {
 
   useEffect(() => {
     setShowReader(false);
+    setCollectionOpen(false);
   }, [selectedBookmarkId]);
+
+  useEffect(() => {
+    if (!collectionOpen) return;
+    const handler = (e) => {
+      if (collectionRef.current && !collectionRef.current.contains(e.target)) {
+        setCollectionOpen(false);
+      }
+    };
+    const onKey = (e) => { if (e.key === 'Escape') setCollectionOpen(false); };
+    document.addEventListener('mousedown', handler);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [collectionOpen]);
 
   if (!bookmark) return null;
 
@@ -62,7 +81,7 @@ export default function BookmarkDetail() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="bookmark-detail-title"
-        className="fixed right-0 top-0 bottom-0 z-40 w-420px max-w-full bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 overflow-y-auto shadow-xl animate-slideInRight"
+        className="fixed right-0 top-0 bottom-0 z-40 w-105 max-w-full bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 overflow-y-auto shadow-xl animate-slideInRight"
       >
         <div className="sticky top-0 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-200 dark:border-zinc-800 px-4 py-3 flex items-center justify-between z-10">
           <h2 id="bookmark-detail-title" className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate">Details</h2>
@@ -138,16 +157,36 @@ export default function BookmarkDetail() {
 
           <div className="border-t border-zinc-100 dark:border-zinc-800 pt-4">
             <label className="text-xs font-medium uppercase tracking-wider text-zinc-400 mb-2 block">Collection</label>
-            <select
-              value={bookmark.collectionId || ''}
-              onChange={(e) => moveToCollection(bookmark.id, e.target.value || null)}
-              className="w-full px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-900 dark:text-zinc-100 outline-none cursor-pointer"
-            >
-              <option value="">No collection</option>
-              {collections.map((col) => (
-                <option key={col.id} value={col.id}>{col.name}</option>
-              ))}
-            </select>
+            <div ref={collectionRef} className="relative">
+              <button
+                onClick={() => setCollectionOpen((o) => !o)}
+                className={`w-full flex items-center justify-between px-3 py-2 text-sm bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors duration-150 ${collectionOpen ? 'rounded-t-lg' : 'rounded-lg'}`}
+              >
+                <span>{collections.find((c) => c.id === bookmark.collectionId)?.name ?? 'No collection'}</span>
+                <ChevronDown size={14} className={`text-zinc-400 transition-transform duration-150 ${collectionOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {collectionOpen && (
+                <div className="absolute left-0 right-0 top-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-b-lg shadow-lg py-1 z-20">
+                  <button
+                    onClick={() => { moveToCollection(bookmark.id, null); setCollectionOpen(false); }}
+                    className="w-full flex items-center justify-between px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-150"
+                  >
+                    <span>No collection</span>
+                    {!bookmark.collectionId && <Check size={14} className="text-blue-500" />}
+                  </button>
+                  {collections.map((col) => (
+                    <button
+                      key={col.id}
+                      onClick={() => { moveToCollection(bookmark.id, col.id); setCollectionOpen(false); }}
+                      className="w-full flex items-center justify-between px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors duration-150"
+                    >
+                      <span>{col.name}</span>
+                      {bookmark.collectionId === col.id && <Check size={14} className="text-blue-500" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="border-t border-zinc-100 dark:border-zinc-800 pt-4 grid grid-cols-2 gap-2">

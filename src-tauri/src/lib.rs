@@ -184,9 +184,30 @@ pub fn run() {
         // Minimize to tray instead of quitting when the window is closed
         if let tauri::WindowEvent::CloseRequested { api, .. } = event {
             api.prevent_close();
-            let _ = window.hide();
+            if window.is_fullscreen().unwrap_or(false) {
+                // Exit fullscreen first, then wait for the macOS animation to
+                // finish before hiding — otherwise the window briefly appears
+                // in windowed mode and a black space is left behind.
+                let w = window.clone();
+                tauri::async_runtime::spawn(async move {
+                    let _ = w.set_fullscreen(false);
+                    tokio::time::sleep(std::time::Duration::from_millis(600)).await;
+                    let _ = w.hide();
+                });
+            } else {
+                let _ = window.hide();
+            }
         }
     })
-    .run(tauri::generate_context!())
-    .expect("error while running tauri application");
+    .build(tauri::generate_context!())
+    .expect("error while building tauri application")
+    .run(|app, event| {
+        // Show the window when the user clicks the dock icon on macOS
+        if let tauri::RunEvent::Reopen { .. } = event {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }
+    });
 }
