@@ -4,7 +4,6 @@ import { useBookmarkStore } from './store/useBookmarkStore.js';
 import { useFeedStore } from './store/useFeedStore.js';
 import { useThemeStore } from './store/useThemeStore.js';
 import Layout from './components/Layout.jsx';
-import TitleBar from './components/TitleBar.jsx';
 import ConfirmDialog from './components/ConfirmDialog.jsx';
 
 export default function App() {
@@ -40,7 +39,6 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <TitleBar />
       <Layout />
       <ConfirmDialog />
     </div>
