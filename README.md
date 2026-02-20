@@ -173,7 +173,6 @@ stash/
 │   │   ├── export.js           JSON / HTML / OPML import & export
 │   │   └── timeAgo.js          Relative timestamps
 │   └── components/
-│       ├── TitleBar.jsx        Custom frameless title bar
 │       ├── Layout.jsx          Main layout + keyboard shortcuts
 │       ├── Sidebar.jsx         Navigation sidebar
 │       ├── BookmarkCard.jsx    Grid card

@@ -209,6 +209,13 @@ export default function ReaderView({ bookmark, onClose }) {
                 className="reader-content pb-24"
                 style={contentStyle}
                 dangerouslySetInnerHTML={{ __html: content }}
+                onClick={(e) => {
+                  const anchor = e.target.closest('a');
+                  if (anchor?.href) {
+                    e.preventDefault();
+                    shellOpen(anchor.href);
+                  }
+                }}
               />
 
               {/* End of article */}
