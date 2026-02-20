@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Plus, CheckSquare, Bookmark } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Plus, CheckSquare, Bookmark, Shield, Lock } from 'lucide-react';
 import { useBookmarkStore, useFilteredBookmarks } from '../store/useBookmarkStore.js';
 import { useFeedStore } from '../store/useFeedStore.js';
+import { useVaultStore } from '../store/useVaultStore.js';
 import Sidebar from './Sidebar.jsx';
 import BookmarkList from './BookmarkList.jsx';
 import BookmarkDetail from './BookmarkDetail.jsx';
@@ -16,11 +17,15 @@ import KeyboardShortcuts from './KeyboardShortcuts.jsx';
 import DuplicateScanner from './DuplicateScanner.jsx';
 import ToastContainer from './Toast.jsx';
 import DndProvider from './DndProvider.jsx';
+import VaultSetup from './VaultSetup.jsx';
+import VaultUnlock from './VaultUnlock.jsx';
+import VaultView from './VaultView.jsx';
 
 export default function Layout() {
   const { activeView, selectedBookmarkId, collections, setActiveView, setSelectedBookmark, toggleBulkMode, bulkMode, setViewMode } = useBookmarkStore();
   const { feeds } = useFeedStore();
   const filteredBookmarks = useFilteredBookmarks();
+  const { isEnabled, isUnlocked, lock: vaultLock } = useVaultStore();
 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -30,8 +35,26 @@ export default function Layout() {
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showDuplicateScanner, setShowDuplicateScanner] = useState(false);
+  const [showVaultSetup, setShowVaultSetup] = useState(false);
 
   const bookmarkCount = filteredBookmarks.length;
+  const prevActiveViewRef = useRef(activeView);
+
+  // Lock vault when navigating away from vault view
+  useEffect(() => {
+    const prev = prevActiveViewRef.current;
+    prevActiveViewRef.current = activeView;
+    if (prev === 'vault' && activeView !== 'vault') {
+      vaultLock();
+    }
+  }, [activeView, vaultLock]);
+
+  // Auto-show vault setup when navigating to vault while it's not yet enabled
+  useEffect(() => {
+    if (activeView === 'vault' && !isEnabled) {
+      setShowVaultSetup(true);
+    }
+  }, [activeView, isEnabled]);
 
   const handleKeyDown = useCallback((e) => {
     const target = e.target;
@@ -50,6 +73,11 @@ export default function Layout() {
     if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
       e.preventDefault();
       toggleBulkMode();
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'v') {
+      e.preventDefault();
+      setActiveView('vault');
       return;
     }
 
@@ -81,6 +109,7 @@ export default function Layout() {
   }, [handleKeyDown]);
 
   const getViewTitle = () => {
+    if (activeView === 'vault') return 'Private Vault';
     if (activeView === 'inbox') return 'Inbox';
     if (activeView === 'all') return 'All Bookmarks';
     if (activeView === 'favorites') return 'Favorites';
@@ -132,44 +161,87 @@ export default function Layout() {
             <h1 className="text-lg sm:text-xl font-semibold text-zinc-900 dark:text-zinc-50 truncate">
               {getViewTitle()}
             </h1>
-            <span className="text-xs text-zinc-400 dark:text-zinc-500">{bookmarkCount} item{bookmarkCount !== 1 ? 's' : ''}</span>
+            {activeView !== 'vault' && (
+              <span className="text-xs text-zinc-400 dark:text-zinc-500">{bookmarkCount} item{bookmarkCount !== 1 ? 's' : ''}</span>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <SortDropdown />
-            <ViewToggle />
-            <button
-              onClick={() => toggleBulkMode()}
-              className={`p-1.5 rounded-lg transition-colors duration-150 cursor-pointer hidden sm:flex ${
-                bulkMode
-                  ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-500'
-                  : 'text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-600'
-              }`}
-              title="Bulk select (Ctrl+B)"
-            >
-              <CheckSquare size={16} />
-            </button>
-            <button
-              onClick={() => setShowAddBookmark(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-500 hover:bg-blue-600 text-black font-bold rounded-lg transition-colors duration-150 cursor-pointer"
-            >
-              <Plus size={14} />
-              <span className="hidden sm:inline">Add</span>
-            </button>
+            {activeView === 'vault' ? (
+              isUnlocked && (
+                <button
+                  onClick={vaultLock}
+                  title="Lock vault"
+                  className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors duration-150 cursor-pointer"
+                >
+                  <Lock size={16} />
+                </button>
+              )
+            ) : (
+              <>
+                <SortDropdown />
+                <ViewToggle />
+                <button
+                  onClick={() => toggleBulkMode()}
+                  className={`p-1.5 rounded-lg transition-colors duration-150 cursor-pointer hidden sm:flex ${
+                    bulkMode
+                      ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-500'
+                      : 'text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-600'
+                  }`}
+                  title="Bulk select (Ctrl+B)"
+                >
+                  <CheckSquare size={16} />
+                </button>
+                <button
+                  onClick={() => setShowAddBookmark(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-500 hover:bg-blue-600 text-black font-bold rounded-lg transition-colors duration-150 cursor-pointer"
+                >
+                  <Plus size={14} />
+                  <span className="hidden sm:inline">Add</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Bulk action bar */}
-        <BulkActionBar />
+        {/* Bulk action bar — hidden on vault view */}
+        {activeView !== 'vault' && <BulkActionBar />}
 
-        {/* Content — BookmarkList manages its own scroll for virtualization */}
-        <div className="flex-1 overflow-hidden px-4 sm:px-6 py-4 sm:py-6">
-          <BookmarkList />
-        </div>
+        {/* Content */}
+        {activeView === 'vault' ? (
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            {isEnabled && isUnlocked ? (
+              <VaultView />
+            ) : isEnabled && !isUnlocked ? (
+              <VaultUnlock />
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center px-6">
+                <div className="w-14 h-14 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+                  <Shield size={24} className="text-zinc-400 dark:text-zinc-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Private Vault</p>
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">Encrypt your private bookmarks with AES-256.</p>
+                </div>
+                <button
+                  onClick={() => setShowVaultSetup(true)}
+                  className="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-black font-bold rounded-lg transition-colors duration-150 cursor-pointer"
+                >
+                  Create Vault
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex-1 overflow-hidden px-4 sm:px-6 py-4 sm:py-6">
+            <BookmarkList />
+          </div>
+        )}
       </main>
 
       {selectedBookmarkId && <BookmarkDetail />}
 
+      {showVaultSetup && <VaultSetup onClose={() => setShowVaultSetup(false)} />}
       {showAddBookmark && <AddBookmark onClose={() => setShowAddBookmark(false)} />}
       {showAddFeed && <AddFeed onClose={() => setShowAddFeed(false)} />}
       {showAddCollection && <AddCollection onClose={() => setShowAddCollection(false)} />}

@@ -616,6 +616,8 @@ export const useBookmarkStore = create((set, get) => ({
     } else if (activeView.startsWith('feed:')) {
       const feedId = activeView.slice(5);
       filtered = bookmarks.filter((b) => b.feedId === feedId);
+    } else if (activeView === 'vault') {
+      filtered = []; // vault bookmarks are managed separately in useVaultStore
     } else if (activeView === 'search') {
       filtered = searchBookmarks(bookmarks, searchQuery);
     } else {

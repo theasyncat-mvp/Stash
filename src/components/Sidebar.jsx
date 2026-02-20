@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import {
-  Inbox, Bookmark, Star, Archive, Tag,
+  Inbox, Bookmark, Star, Archive, Tag, Shield,
   ChevronRight, ChevronDown, PanelLeftClose, PanelLeft, Command, Keyboard,
 } from 'lucide-react';
 import { useBookmarkStore, useAllTags, useInboxCount } from '../store/useBookmarkStore.js';
+import { useVaultStore } from '../store/useVaultStore.js';
 import SearchBar from './SearchBar.jsx';
 import FeedList from './FeedList.jsx';
 import CollectionList from './CollectionList.jsx';
@@ -26,6 +27,8 @@ export default function Sidebar({ collapsed, onToggle, onAddFeed, onAddCollectio
 
   const inboxCount = useInboxCount();
   const tags = useAllTags();
+
+  const { isEnabled, isUnlocked, isSidebarVisible, bookmarks: vaultBookmarks } = useVaultStore();
 
   const handleNav = (view) => {
     setActiveView(view);
@@ -64,6 +67,19 @@ export default function Sidebar({ collapsed, onToggle, onAddFeed, onAddCollectio
             </button>
           );
         })}
+        {isEnabled && isSidebarVisible && (
+          <button
+            onClick={() => handleNav('vault')}
+            className={`relative p-2 rounded-lg mb-1 transition-colors duration-150 cursor-pointer ${
+              activeView === 'vault'
+                ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-500 dark:text-blue-400'
+                : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'
+            }`}
+            title="Private Vault"
+          >
+            <Shield size={16} />
+          </button>
+        )}
       </div>
     );
   }
@@ -86,12 +102,29 @@ export default function Sidebar({ collapsed, onToggle, onAddFeed, onAddCollectio
         <div className="space-y-0.5">
           {navItems.map((item) => (
             <DroppableNavItem
+              key={item.id}
               item={item}
               isActive={activeView === item.id}
               inboxCount={item.id === 'inbox' ? inboxCount : 0}
               onNav={handleNav}
             />
           ))}
+          {isEnabled && isSidebarVisible && (
+            <button
+              onClick={() => handleNav('vault')}
+              className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-colors duration-150 cursor-pointer ${
+                activeView === 'vault'
+                  ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800'
+              }`}
+            >
+              <Shield size={16} />
+              <span className="text-sm flex-1">Private Vault</span>
+              {isUnlocked && vaultBookmarks.length > 0 && (
+                <span className="text-xs text-zinc-400 dark:text-zinc-500">{vaultBookmarks.length}</span>
+              )}
+            </button>
+          )}
         </div>
 
         <div>

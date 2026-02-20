@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { check } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { useBookmarkStore } from './store/useBookmarkStore.js';
 import { useFeedStore } from './store/useFeedStore.js';
 import { useThemeStore } from './store/useThemeStore.js';
 import { useConfirmStore } from './store/useConfirmStore.js';
+import { useVaultStore } from './store/useVaultStore.js';
 import Layout from './components/Layout.jsx';
 import ConfirmDialog from './components/ConfirmDialog.jsx';
 
@@ -19,7 +21,19 @@ export default function App() {
     loadAll();
     loadFeeds();
     initTheme();
+    useVaultStore.getState().load();
   }, [loadAll, loadFeeds, initTheme]);
+
+  // Lock vault when app window loses focus (if vault view is active)
+  useEffect(() => {
+    let unlisten;
+    getCurrentWindow().listen('tauri://blur', () => {
+      if (useBookmarkStore.getState().activeView === 'vault') {
+        useVaultStore.getState().lock();
+      }
+    }).then((fn) => { unlisten = fn; });
+    return () => { unlisten?.(); };
+  }, []);
 
   // Check for updates silently on startup
   useEffect(() => {

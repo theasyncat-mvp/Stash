@@ -68,6 +68,40 @@ export async function saveReaderPrefs(prefs) {
   await store.set(KEYS.readerPrefs, prefs);
 }
 
+// ── Vault storage ────────────────────────────────────────────────────────────
+
+export async function loadVaultConfig() {
+  return (await store.get('stash-vault-config')) ?? null;
+}
+
+export async function saveVaultConfig(config) {
+  await store.set('stash-vault-config', config);
+}
+
+export async function loadVaultMeta() {
+  return (await store.get('stash-vault-meta')) ?? null;
+}
+
+export async function saveVaultMeta(meta) {
+  if (meta === null) {
+    await store.delete('stash-vault-meta');
+  } else {
+    await store.set('stash-vault-meta', meta);
+  }
+}
+
+export async function loadVaultData() {
+  return (await store.get('stash-vault-data')) ?? '';
+}
+
+export async function saveVaultData(data) {
+  if (data === null) {
+    await store.delete('stash-vault-data');
+  } else {
+    await store.set('stash-vault-data', data);
+  }
+}
+
 export async function exportAllData() {
   return {
     bookmarks: await store.get(KEYS.bookmarks),
