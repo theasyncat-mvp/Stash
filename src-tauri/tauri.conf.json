@@ -27,6 +27,14 @@
       "csp": "default-src 'self'; img-src 'self' https: http: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src ipc: http://ipc.localhost"
     }
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDg3Q0JGQUE1MkMyMDE4QUMKUldTc0dDQXNwZnJMaDl6cUM4R0RNcmlRVEVtNmNQcEZPSE12Mkk4WDd0dG1pcmFEMXdSTTd1YSsK",
+      "endpoints": [
+        "https://github.com/nicosql/Stash/releases/latest/download/latest.json"
+      ]
+    }
+  },
   "bundle": {
     "active": true,
     "targets": ["deb", "rpm"],

@@ -1,8 +1,11 @@
 import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { check } from '@tauri-apps/plugin-updater';
+import { relaunch } from '@tauri-apps/plugin-process';
 import { useBookmarkStore } from './store/useBookmarkStore.js';
 import { useFeedStore } from './store/useFeedStore.js';
 import { useThemeStore } from './store/useThemeStore.js';
+import { useConfirmStore } from './store/useConfirmStore.js';
 import Layout from './components/Layout.jsx';
 import ConfirmDialog from './components/ConfirmDialog.jsx';
 
@@ -17,6 +20,28 @@ export default function App() {
     loadFeeds();
     initTheme();
   }, [loadAll, loadFeeds, initTheme]);
+
+  // Check for updates silently on startup
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      try {
+        const update = await check();
+        if (!update) return;
+        const confirmed = await useConfirmStore.getState().confirm({
+          title: `Update available: v${update.version}`,
+          message: update.body || 'A new version of Stash is available. Install now?',
+          confirmLabel: 'Install & Restart',
+        });
+        if (confirmed) {
+          await update.downloadAndInstall();
+          await relaunch();
+        }
+      } catch {
+        // silently ignore — don't interrupt the user if the check fails
+      }
+    };
+    checkForUpdates();
+  }, []);
 
   // Listen for bookmarks saved from the browser extension
   useEffect(() => {
