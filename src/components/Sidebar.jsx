@@ -67,7 +67,7 @@ export default function Sidebar({ collapsed, onToggle, onAddFeed, onAddCollectio
             </button>
           );
         })}
-        {isEnabled && isSidebarVisible && (
+        {isSidebarVisible && (
           <button
             onClick={() => handleNav('vault')}
             className={`relative p-2 rounded-lg mb-1 transition-colors duration-150 cursor-pointer ${
@@ -109,7 +109,7 @@ export default function Sidebar({ collapsed, onToggle, onAddFeed, onAddCollectio
               onNav={handleNav}
             />
           ))}
-          {isEnabled && isSidebarVisible && (
+          {isSidebarVisible && (
             <button
               onClick={() => handleNav('vault')}
               className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-left transition-colors duration-150 cursor-pointer ${

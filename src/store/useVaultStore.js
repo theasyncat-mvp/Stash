@@ -11,6 +11,8 @@ export const useVaultStore = create((set, get) => ({
   isEnabled: false,
   isUnlocked: false,
   isSidebarVisible: true,
+  sortBy: 'manual',
+  vaultShortcut: null, // { key: string, modifiers: string[] } — custom keyboard shortcut
   meta: null,       // JSON string stored in stash-vault-meta
   bookmarks: [],    // decrypted, in-memory only — cleared on lock
   _password: null,  // in-memory only — cleared on lock
@@ -20,6 +22,7 @@ export const useVaultStore = create((set, get) => ({
     set({
       isEnabled: config?.enabled ?? false,
       isSidebarVisible: config?.sidebarVisible ?? true,
+      vaultShortcut: config?.vaultShortcut ?? null,
       meta: meta ?? null,
     });
   },
@@ -29,7 +32,7 @@ export const useVaultStore = create((set, get) => ({
     const meta = await invoke('vault_setup', { password });
     await saveVaultMeta(meta);
     await saveVaultData('');
-    await saveVaultConfig({ enabled: true, sidebarVisible: get().isSidebarVisible });
+    await saveVaultConfig({ enabled: true, sidebarVisible: get().isSidebarVisible, vaultShortcut: get().vaultShortcut });
     set({ isEnabled: true, meta, isUnlocked: true, bookmarks: [], _password: password });
   },
 
@@ -105,10 +108,28 @@ export const useVaultStore = create((set, get) => ({
     await get()._save();
   },
 
+  setSortBy: (sortBy) => set({ sortBy }),
+
+  reorderBookmarks: async (activeId, overId) => {
+    const bookmarks = [...get().bookmarks];
+    const oldIndex = bookmarks.findIndex((b) => b.id === activeId);
+    const newIndex = bookmarks.findIndex((b) => b.id === overId);
+    if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+    const [moved] = bookmarks.splice(oldIndex, 1);
+    bookmarks.splice(newIndex, 0, moved);
+    set({ bookmarks });
+    await get()._save();
+  },
+
   toggleSidebarVisible: async () => {
     const isSidebarVisible = !get().isSidebarVisible;
     set({ isSidebarVisible });
-    await saveVaultConfig({ enabled: get().isEnabled, sidebarVisible: isSidebarVisible });
+    await saveVaultConfig({ enabled: get().isEnabled, sidebarVisible: isSidebarVisible, vaultShortcut: get().vaultShortcut });
+  },
+
+  setVaultShortcut: async (shortcut) => {
+    set({ vaultShortcut: shortcut });
+    await saveVaultConfig({ enabled: get().isEnabled, sidebarVisible: get().isSidebarVisible, vaultShortcut: shortcut });
   },
 
   changePassword: async (oldPassword, newPassword) => {
@@ -131,12 +152,12 @@ export const useVaultStore = create((set, get) => ({
     const { meta } = get();
     const valid = await invoke('vault_verify', { password, meta });
     if (!valid) return false;
-    await saveVaultConfig({ enabled: false, sidebarVisible: true });
+    await saveVaultConfig({ enabled: false, sidebarVisible: true, vaultShortcut: null });
     await saveVaultMeta(null);
     await saveVaultData(null);
     set({
       isEnabled: false, isUnlocked: false,
-      bookmarks: [], meta: null, _password: null, isSidebarVisible: true,
+      bookmarks: [], meta: null, _password: null, isSidebarVisible: true, vaultShortcut: null,
     });
     return true;
   },

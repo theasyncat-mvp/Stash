@@ -8,15 +8,18 @@ import {
   closestCenter,
 } from '@dnd-kit/core';
 import { useBookmarkStore } from '../store/useBookmarkStore.js';
+import { useVaultStore } from '../store/useVaultStore.js';
 
 /**
  * Top-level drag & drop provider.
  *
  * Bookmark items carry  `data: { type: 'bookmark', bookmark }`.
+ * Vault items carry     `data: { type: 'vault-bookmark', bookmark }`.
  * Drop targets carry    `data: { type: 'collection'|'tag'|'nav', id }`.
  *
- * - Dropping on a sortable sibling → reorder  (handled by BookmarkList)
+ * - Dropping on a sortable sibling → reorder  (handled by BookmarkList / VaultView)
  * - Dropping on a sidebar target   → move to collection / tag / archive / favorite
+ *   (vault bookmarks are NOT allowed to drop on sidebar targets)
  */
 export default function DndProvider({ children }) {
   const [activeBookmark, setActiveBookmark] = useState(null);
@@ -29,7 +32,8 @@ export default function DndProvider({ children }) {
 
   const handleDragStart = useCallback((event) => {
     const { active } = event;
-    if (active.data.current?.type === 'bookmark') {
+    const type = active.data.current?.type;
+    if (type === 'bookmark' || type === 'vault-bookmark') {
       setActiveBookmark(active.data.current.bookmark);
     }
   }, []);
@@ -38,6 +42,15 @@ export default function DndProvider({ children }) {
     const { active, over } = event;
     setActiveBookmark(null);
     if (!over || !active.data.current) return;
+
+    // Vault bookmarks: only allow reordering within the vault list
+    if (active.data.current.type === 'vault-bookmark') {
+      if (over.data.current?.type === 'vault-bookmark' && active.id !== over.id) {
+        useVaultStore.getState().reorderBookmarks(active.id, over.id);
+        useVaultStore.getState().setSortBy('manual');
+      }
+      return;
+    }
 
     const bookmarkId = active.id;
     const overData = over.data.current;

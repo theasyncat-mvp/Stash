@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, CheckSquare, Bookmark, Shield, Lock } from 'lucide-react';
 import { useBookmarkStore, useFilteredBookmarks } from '../store/useBookmarkStore.js';
 import { useFeedStore } from '../store/useFeedStore.js';
@@ -25,7 +25,7 @@ export default function Layout() {
   const { activeView, selectedBookmarkId, collections, setActiveView, setSelectedBookmark, toggleBulkMode, bulkMode, setViewMode } = useBookmarkStore();
   const { feeds } = useFeedStore();
   const filteredBookmarks = useFilteredBookmarks();
-  const { isEnabled, isUnlocked, lock: vaultLock } = useVaultStore();
+  const { isEnabled, isUnlocked, lock: vaultLock, vaultShortcut } = useVaultStore();
 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -38,16 +38,13 @@ export default function Layout() {
   const [showVaultSetup, setShowVaultSetup] = useState(false);
 
   const bookmarkCount = filteredBookmarks.length;
-  const prevActiveViewRef = useRef(activeView);
 
-  // Lock vault when navigating away from vault view
+  // Lock vault whenever the user is no longer on the vault view
   useEffect(() => {
-    const prev = prevActiveViewRef.current;
-    prevActiveViewRef.current = activeView;
-    if (prev === 'vault' && activeView !== 'vault') {
+    if (isUnlocked && activeView !== 'vault') {
       vaultLock();
     }
-  }, [activeView, vaultLock]);
+  }, [activeView, isUnlocked, vaultLock]);
 
   // Auto-show vault setup when navigating to vault while it's not yet enabled
   useEffect(() => {
@@ -75,10 +72,19 @@ export default function Layout() {
       toggleBulkMode();
       return;
     }
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'v') {
-      e.preventDefault();
-      setActiveView('vault');
-      return;
+    if (vaultShortcut) {
+      const mods = vaultShortcut.modifiers;
+      if (
+        e.key === vaultShortcut.key &&
+        mods.includes('Meta') === e.metaKey &&
+        mods.includes('Control') === e.ctrlKey &&
+        mods.includes('Shift') === e.shiftKey &&
+        mods.includes('Alt') === e.altKey
+      ) {
+        e.preventDefault();
+        setActiveView('vault');
+        return;
+      }
     }
 
     if (e.key === 'Escape') {
@@ -101,7 +107,7 @@ export default function Layout() {
     if (e.key === '4') { setActiveView('archive'); return; }
     if (e.key.toLowerCase() === 'g') { setViewMode('grid'); return; }
     if (e.key.toLowerCase() === 'l') { setViewMode('list'); return; }
-  }, [showCommandPalette, showShortcuts, showAddBookmark, showAddFeed, showAddCollection, showDuplicateScanner, selectedBookmarkId, bulkMode, setActiveView, setSelectedBookmark, toggleBulkMode, setViewMode]);
+  }, [showCommandPalette, showShortcuts, showAddBookmark, showAddFeed, showAddCollection, showDuplicateScanner, selectedBookmarkId, bulkMode, vaultShortcut, setActiveView, setSelectedBookmark, toggleBulkMode, setViewMode]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -221,7 +227,7 @@ export default function Layout() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Private Vault</p>
-                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">Encrypt your private bookmarks with AES-256.</p>
+                  <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">A secure space for bookmarks you want to keep private.</p>
                 </div>
                 <button
                   onClick={() => setShowVaultSetup(true)}
