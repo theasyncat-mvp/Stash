@@ -12,6 +12,7 @@ import CollectionList from './CollectionList.jsx';
 import ThemeToggle from './ThemeToggle.jsx';
 import ImportExport from './ImportExport.jsx';
 import KeyboardShortcuts from './KeyboardShortcuts.jsx';
+import UpdateChecker from './UpdateChecker.jsx';
 
 const navItems = [
   { id: 'inbox', label: 'Inbox', icon: Inbox, key: '1' },
@@ -161,6 +162,7 @@ export default function Sidebar({ collapsed, onToggle, onAddFeed, onAddCollectio
         <div className="flex items-center justify-between">
           <ThemeToggle />
           <div className="flex items-center gap-1">
+            <UpdateChecker />
             <button
               onClick={() => setShowShortcuts(true)}
               className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg transition-colors duration-150 cursor-pointer"
