@@ -7,6 +7,39 @@ import { timeAgo } from '../lib/timeAgo.js';
 import TagManager from './TagManager.jsx';
 import ReaderView from './ReaderView.jsx';
 
+// Core video/streaming/music platforms — small curated list of definitive services
+const MEDIA_DOMAINS = new Set([
+  'youtube.com', 'youtu.be', 'music.youtube.com',
+  'vimeo.com', 'dailymotion.com', 'rumble.com', 'odysee.com',
+  'tiktok.com', 'twitch.tv', 'kick.com',
+  'netflix.com', 'disneyplus.com', 'hulu.com',
+  'max.com', 'hbomax.com', 'peacocktv.com',
+  'paramountplus.com', 'primevideo.com', 'tv.apple.com',
+  'crunchyroll.com', 'funimation.com',
+  'spotify.com', 'soundcloud.com', 'bandcamp.com',
+  'deezer.com', 'tidal.com', 'music.apple.com',
+]);
+
+// Media file extensions — catches any site serving raw media files
+const MEDIA_EXT_RE = /\.(mp4|webm|mkv|avi|mov|m4v|flv|wmv|mp3|m4a|ogg|flac|wav|aac|opus)(\?|#|$)/i;
+
+// Embed/player path patterns — generic signal for non-readable video pages
+// /live/ and /stream/ catch free sports streaming sites regardless of domain
+const MEDIA_PATH_RE = /\/(embed|player|live-stream|live|stream|channel)(\/|$|\?)/i;
+
+function isReadableUrl(url) {
+  try {
+    const { hostname, pathname } = new URL(url);
+    const host = hostname.replace(/^www\./, '');
+    if (MEDIA_DOMAINS.has(host)) return false;
+    if (MEDIA_EXT_RE.test(pathname)) return false;
+    if (MEDIA_PATH_RE.test(pathname)) return false;
+    return true;
+  } catch {
+    return true;
+  }
+}
+
 export default function BookmarkDetail() {
   const {
     bookmarks, selectedBookmarkId, setSelectedBookmark,
@@ -50,6 +83,8 @@ export default function BookmarkDetail() {
   }, [collectionOpen]);
 
   if (!bookmark) return null;
+
+  const readable = isReadableUrl(bookmark.url);
 
   if (showReader) {
     return <ReaderView bookmark={bookmark} onClose={() => setShowReader(false)} />;
@@ -190,13 +225,15 @@ export default function BookmarkDetail() {
           </div>
 
           <div className="border-t border-zinc-100 dark:border-zinc-800 pt-4 grid grid-cols-2 gap-2">
-            <button
-              onClick={() => setShowReader(true)}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 text-sm bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors duration-150 cursor-pointer"
-            >
-              <Eye size={14} />
-              Reader
-            </button>
+            {readable && (
+              <button
+                onClick={() => setShowReader(true)}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 text-sm bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors duration-150 cursor-pointer"
+              >
+                <Eye size={14} />
+                Reader
+              </button>
+            )}
             <button
               onClick={() => toggleFavorite(bookmark.id)}
               className={`flex items-center justify-center gap-1.5 px-3 py-2 text-sm rounded-lg transition-colors duration-150 cursor-pointer ${
@@ -208,17 +245,19 @@ export default function BookmarkDetail() {
               <Star size={14} fill={bookmark.isFavorite ? 'currentColor' : 'none'} />
               {bookmark.isFavorite ? 'Favorited' : 'Favorite'}
             </button>
-            <button
-              onClick={() => toggleRead(bookmark.id)}
-              className={`flex items-center justify-center gap-1.5 px-3 py-2 text-sm rounded-lg transition-colors duration-150 cursor-pointer ${
-                bookmark.isRead
-                  ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
-              }`}
-            >
-              <BookmarkCheck size={14} />
-              {bookmark.isRead ? 'Read' : 'Mark Read'}
-            </button>
+            {readable && (
+              <button
+                onClick={() => toggleRead(bookmark.id)}
+                className={`flex items-center justify-center gap-1.5 px-3 py-2 text-sm rounded-lg transition-colors duration-150 cursor-pointer ${
+                  bookmark.isRead
+                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                }`}
+              >
+                <BookmarkCheck size={14} />
+                {bookmark.isRead ? 'Read' : 'Mark Read'}
+              </button>
+            )}
             <button
               onClick={() => toggleArchive(bookmark.id)}
               className="flex items-center justify-center gap-1.5 px-3 py-2 text-sm bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors duration-150 cursor-pointer"
